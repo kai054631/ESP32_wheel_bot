@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>T8 — Closed-Loop PI Speed Control</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #5fb3ff;
+    --accent-2: #7ee0b3;
+    --warn: #ffb15f;
+    --bad: #ff8080;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 0 0 4rem; line-height: 1.55; }
+  header {
+    padding: 2.2rem 2rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151822, #0f1115);
+  }
+  header .kicker { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  header h1 { margin: 0.3rem 0 0.4rem; font-size: 1.5rem; }
+  header .sub { color: var(--muted); font-size: 0.92rem; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 2rem; }
+  .meta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+  .pill {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 0.3rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+  }
+  .pill b { color: var(--text); }
+  section { margin-top: 2rem; }
+  h2 { font-size: 1.05rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; margin-bottom: 0.9rem; }
+  h3 { font-size: 0.95rem; color: var(--accent-2); margin: 1.1rem 0 0.5rem; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  ol.steps, ul.list { padding-left: 1.3rem; }
+  ol.steps li, ul.list li { margin-bottom: 0.7rem; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 5px;
+    font-size: 0.88em; color: var(--accent-2);
+  }
+  pre {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem;
+  }
+  a { color: var(--accent); }
+  .note {
+    background: rgba(255,177,95,0.08); border: 1px solid rgba(255,177,95,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .note b { color: var(--warn); }
+  .danger {
+    background: rgba(255,128,128,0.08); border: 1px solid rgba(255,128,128,0.35);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .danger b { color: var(--bad); }
+  .checkpoint {
+    background: rgba(126,224,179,0.08); border: 1px solid rgba(126,224,179,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.6rem;
+  }
+  .checkpoint b { color: var(--accent-2); }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.6rem; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .blank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.4em; height: 1.4em; border-radius: 50%;
+    background: var(--accent); color: #0a1a12; font-weight: 700; font-size: 0.78em;
+  }
+  details {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.4rem; margin-top: 0.8rem;
+  }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  details[open] summary { margin-bottom: 0.8rem; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Tutorial 8 of 8 — Drive-first track</div>
+    <h1>Closed-Loop PI Speed Control</h1>
+    <div class="sub">Make each wheel actually hit the speed it's told to, by measuring and correcting — the step that turns an approximate robot into an accurate one.</div>
+    <div class="meta-row">
+      <div class="pill">⏱ <b>90 min</b></div>
+      <div class="pill">🎯 Goal: <b>straight-line drive better than T7's baseline; a 1 m square that returns near start</b></div>
+      <div class="pill">📍 needs 1000 Hz FreeRTOS tick</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>What you're building</h2>
+    <div class="card">
+      <p>T7's <code>drive(v, ω)</code> is open-loop: it commands a duty and hopes the motor
+      obeys. It doesn't, exactly — you measured that drift over 2 m. This tutorial closes the
+      loop: measure each wheel's actual speed (from T6), compare it to what was commanded, and
+      continuously correct the duty until they match.</p>
+      <pre>target_speed ──►(+)──► PI controller ──► duty ──► motor ──► wheel
+                 ▲                                              │
+                 └──────────────── measured speed ◄── encoder ──┘</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Concepts, explained inline</h2>
+    <div class="card">
+      <h3>Why open-loop can't be fixed by "better" constants</h3>
+      <p>Two DC motors of the same model are never identical — small differences in windings,
+      bearings, and gearbox friction mean the same duty produces measurably different speeds.
+      No amount of tuning a single global duty-to-speed formula fixes this, because the error is
+      <i>different for each motor</i>. The only way out is to look at what each wheel is actually
+      doing, right now, and correct it — which is what a control loop is.</p>
+
+      <h3>P and I, in plain terms</h3>
+      <table>
+        <tr><th>Term</th><th>Responds to</th><th>Effect</th></tr>
+        <tr><td><b>P</b>roportional</td><td>current error (target − measured)</td><td>bigger error → bigger correction, immediately</td></tr>
+        <tr><td><b>I</b>ntegral</td><td>accumulated error over time</td><td>kills the small steady-state error P alone leaves behind</td></tr>
+      </table>
+      <p>Why P alone isn't enough: with only P, a small residual error produces only a small
+      correction — and if that correction is smaller than what's needed to overcome friction, the
+      wheel settles slightly slow forever. The integral term keeps growing for as long as any
+      error persists, eventually forcing it to zero.</p>
+      <pre>error = target_speed - measured_speed
+integral += error * dt
+output = Kp * error + Ki * integral</pre>
+
+      <h3>Two failure modes every naive PI hits — cover both, or it will misbehave</h3>
+      <div class="danger">
+        <b>Integral windup:</b> if the wheel is physically stalled (or the target is
+        unreachable), <code>error</code> stays large and <code>integral</code> grows without
+        bound. When the obstruction clears, that huge accumulated integral fires a massive
+        overcorrection — the wheel lurches. Fix: clamp <code>integral</code> to a sane range, or
+        freeze it while the output is already saturated.
+      </div>
+      <div class="danger">
+        <b>Output clamping:</b> the computed <code>output</code> must be clamped to
+        <code>±DUTY_MAX</code> before it reaches <code>motorMove</code> — the same unchecked-range
+        issue you already found in <code>ledc_set_duty</code> applies here one layer up. An
+        unclamped PI output can compute values wildly outside what the motor driver can accept.
+      </div>
+
+      <h3>Why the control loop needs a faster FreeRTOS tick</h3>
+      <p>You already found <code>CONFIG_FREERTOS_HZ = 100</code>, meaning a 10 ms tick — the
+      motor ramp problem from T3. The same limit applies here, harder: a PI loop's <code>dt</code>
+      needs to be short and <i>consistent</i> for the integral term's math to behave predictably.
+      Raise it via <code>idf.py menuconfig</code> → Component config → FreeRTOS → Kernel →
+      <code>configTICK_RATE_HZ</code> → 1000, then rebuild. This is a one-time <code>sdkconfig</code>
+      change, not a source edit.</p>
+
+      <h3><code>vTaskDelayUntil</code>, not <code>vTaskDelay</code></h3>
+      <p><code>vTaskDelay(x)</code> waits <code>x</code> ticks <i>from when it's called</i> — so if
+      your loop body takes variable time to run, the interval between iterations drifts.
+      <code>vTaskDelayUntil</code> instead targets a fixed wake-up time regardless of how long the
+      body took, which keeps <code>dt</code> constant — exactly what the PI math above assumes.</p>
+
+      <h3>Tuning procedure</h3>
+      <p>Standard order, don't skip steps: set <code>Ki = 0</code>, raise <code>Kp</code> from
+      zero until the wheel responds promptly without visibly oscillating around the target. Then
+      add a small <code>Ki</code> and watch the steady-state error shrink to zero over a second or
+      two. If it oscillates once <code>Ki</code> is added, it's too large — reduce it.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your hardware</h2>
+    <div class="card">
+      <p>No new pins. This is the first tutorial that runs T5's encoders, T6's speed conversion,
+      and T7's <code>drive()</code> together in one continuously-running task.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code skeleton</h2>
+    <div class="card">
+      <pre>typedef struct {
+    float kp, ki;
+    float integral;
+    float output_min, output_max;
+} pi_controller_t;
+
+float pi_update(pi_controller_t *c, float target, float measured, float dt)
+{
+    float error = <span class="blank">1</span>;
+
+    // only accumulate integral if we're not already saturated —
+    // this is the anti-windup guard
+    float unclamped_output = c->kp * error + c->ki * (c->integral + error * dt);
+    if (unclamped_output >= c->output_min && unclamped_output <= c->output_max) {
+        c->integral += <span class="blank">2</span>;
+    }
+
+    float output = c->kp * error + c->ki * c->integral;
+    if (output > c->output_max) output = <span class="blank">3</span>;
+    if (output < c->output_min) output = <span class="blank">3</span>;
+    return output;
+}
+
+void motor_control_task(void *arg)
+{
+    pi_controller_t pid_A = { .kp = <span class="blank">4</span>, .ki = <span class="blank">4</span>,
+                               .output_min = -100, .output_max = 100 };
+
+    TickType_t last_wake = xTaskGetTickCount();
+    const TickType_t period = <span class="blank">5</span>;   // ticks, at your new 1000 Hz rate
+
+    while (1) {
+        float measured = <span class="blank">6</span>;   // from T6's speed_mps(), motor A
+        float duty = pi_update(&pid_A, target_speed_A, measured, <span class="blank">7</span>);
+        motorMove(MOTOR_A, (int)duty);
+
+        <span class="blank">8</span>;   // sleep until exactly one period from last_wake
+    }
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fill-in table</h2>
+    <div class="card">
+      <table>
+        <tr><th>Blank</th><th>What it does</th><th>Where to find it</th><th>Your answer</th></tr>
+        <tr><td><span class="blank">1</span></td><td>The control error</td><td>defined at the top of the concepts section</td><td></td></tr>
+        <tr><td><span class="blank">2</span></td><td>What to add to the running integral this step</td><td>the pseudocode block above — error scaled by the loop's time step</td><td></td></tr>
+        <tr><td><span class="blank">3</span></td><td>Clamp value when output exceeds a bound</td><td>the struct field that holds that bound</td><td></td></tr>
+        <tr><td><span class="blank">4</span></td><td>Starting gains before tuning</td><td>start both near zero; the tuning procedure above tells you how to raise them</td><td></td></tr>
+        <tr><td><span class="blank">5</span></td><td>Loop period in ticks</td><td><code>pdMS_TO_TICKS()</code> of your chosen loop interval — decide the interval first</td><td></td></tr>
+        <tr><td><span class="blank">6</span></td><td>Current measured wheel speed for motor A</td><td>T6's speed function, fed by motor A's tick tracker</td><td></td></tr>
+        <tr><td><span class="blank">7</span></td><td>The time step to pass into <code>pi_update</code></td><td>should match the loop's actual period — in seconds, not ticks</td><td></td></tr>
+        <tr><td><span class="blank">8</span></td><td>Wait for the next fixed-rate wake-up</td><td>the function named earlier in this page, not <code>vTaskDelay</code> — takes the loop period and a pointer to <code>last_wake</code></td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checkpoints</h2>
+    <div class="checkpoint">
+      <b>You're done when:</b> commanding straight-line drive at a fixed <code>v</code> holds a
+      visibly straighter line over 2 m than T7's baseline number; pressing a light hand-load
+      against one wheel while driving causes it to briefly slow then recover to target speed
+      rather than staying slow; and the robot completes a commanded 1 m square (four 1 m sides,
+      four 90° turns) and ends up close to its starting point and heading.
+    </div>
+  </section>
+
+  <section>
+    <h2>Common failure modes</h2>
+    <div class="card">
+      <ul class="list">
+        <li><b>Wheel oscillates / buzzes at a fixed speed target.</b> <code>Kp</code> too high —
+          reduce it and re-test before touching <code>Ki</code>.</li>
+        <li><b>Reaches target but overshoots then settles.</b> <code>Ki</code> too high relative to
+          <code>Kp</code> — reduce <code>Ki</code>.</li>
+        <li><b>Wheel violently lurches after being blocked and released.</b> Classic integral
+          windup — check the anti-windup guard is actually preventing accumulation while
+          saturated, not just clamping the final output.</li>
+        <li><b>Loop behaves differently depending on system load (other tasks running).</b>
+          You're using <code>vTaskDelay</code> instead of <code>vTaskDelayUntil</code>, or the
+          FreeRTOS tick rate wasn't actually raised — check <code>sdkconfig</code>.</li>
+        <li><b>Speed measurement is zero or stale inside the control loop.</b> Check the tick
+          tracker update call is happening every loop iteration, not just once at startup.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Answer key — open only after you've attempted it</summary>
+      <pre>float error = target - measured;
+...
+c->integral += error * dt;
+...
+if (output > c->output_max) output = c->output_max;
+if (output < c->output_min) output = c->output_min;
+...
+pi_controller_t pid_A = { .kp = 0.5f, .ki = 0.1f, .output_min = -100, .output_max = 100 };
+// starting point only — you must tune these on your own hardware
+...
+const TickType_t period = pdMS_TO_TICKS(20);   // 50 Hz loop, needs the 1000 Hz tick to resolve
+...
+float duty = pi_update(&pid_A, target_speed_A, measured, 0.020f);  // matches period above, in seconds
+...
+vTaskDelayUntil(&last_wake, period);</pre>
+      <p>The starting gains are a reasonable first guess, not an answer to copy blindly — your
+      motors, gearbox, and wheel inertia are different from anyone else's, and the tuning
+      procedure in the concepts section is how you find the numbers that are actually correct for
+      this robot.</p>
+    </details>
+  </section>
+
+</div>
+
+<footer>Tutorial 8 of 8 · <a href="../guide.html">back to course guide</a> · Capstone of the drive-first track</footer>
+
+</body>
+</html>

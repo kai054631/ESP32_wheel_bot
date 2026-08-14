@@ -1,0 +1,3 @@
+[submodule "reference/esp-idf-gy85"]
+	path = reference/esp-idf-gy85
+	url = https://github.com/nopnop2002/esp-idf-gy85

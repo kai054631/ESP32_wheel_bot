@@ -1,0 +1,69 @@
+ESP32-S3 pin usage — inventory of what's currently defined in your code
+Generated 2026-08-12 from every main.c under ~/robot_learner/firmware/
+
+This is a plain inventory (what's written in code right now), not a verified
+wiring plan. The strapping-pin / PSRAM-range / power-topology audit is
+Tutorial 2's job — do that before treating any of this as final.
+
+=====================================================================
+ROBOT WIRING (from Motor_Drive_With_IDF/main/main.c — TB6612 + encoders + I2C)
+=====================================================================
+GPIO 4   pwmA    motor A PWM
+GPIO 5   AIN2    motor A phase change 2
+GPIO 6   AIN1    motor A phase change 1
+GPIO 7   STBY    TB6612 standby (HIGH = driver enabled)
+GPIO 15  BIN1    motor B phase change 1
+GPIO 16  BIN2    motor B phase change 2
+GPIO 17  PWMB    motor B PWM
+GPIO 8   enAA    motor A encoder, phase A
+GPIO 3   enAB    motor A encoder, phase B  ⚠ strapping pin, see note below
+GPIO 46  enBA    motor B encoder, phase A  ⚠ strapping pin, see note below
+GPIO 9   enBB    motor B encoder, phase B
+GPIO 11  sda     I2C SDA (GY-85)
+GPIO 10  scl     I2C SCL (GY-85)
+
+RESOLVED (2026-08-13): GPIO18 was previously wired as a fake "GND" driven
+LOW by firmware (gpio_set_level), which left the TB6612's logic ground
+floating until the ESP32 booted and caused the power-sequencing fault
+where the motor only ran if USB power came up before the battery. The
+wire has been moved to a real GND pin on the board; the GND define and
+all its gpio_config/gpio_set_level uses have been removed from
+Motor_Drive_With_IDF/main/main.c.
+
+OPEN (T5 task): GPIO 3 and GPIO 46 (enAB, enBA) are ESP32-S3 strapping
+pins — sampled at reset to configure boot behaviour. Not yet verified
+whether the encoder's idle/active levels on these pins are safe across a
+reset. Confirm against the ESP32-S3 datasheet's strapping-pin table
+before treating this wiring as final; fallback is moving the encoder to
+free GPIOs.
+
+=====================================================================
+STANDALONE LEARNING EXAMPLES (separate projects, not built/wired together)
+=====================================================================
+LED_Blink/main/main.c
+  GPIO 9   LED_GPIO      output, blinking LED
+
+LED_Blink_Use_GPIO_Config/main/main.c
+  GPIO 9   LED_GPIO      output, LED
+  GPIO 46  switch_GPIO   input, pull-up, polled switch
+
+pwm_project/main/main.c
+  GPIO 9   LED_GPIO      output, PWM via LEDC channel 0
+  GPIO 46  button_gpio   defined, not wired into this file's logic
+
+Interupt_example/main/main.c
+  GPIO 46  LED_GPIO      output, blinking LED
+  GPIO 9   BUTTON_GPIO   input, pull-up, rising-edge ISR + debounce
+
+Analog_Input/main/main.c
+  ADC_CHANNEL_8 (ADC1)   -> GPIO 9 on ESP32-S3 (per Espressif's ADC1
+                            channel table — double-check against the
+                            datasheet, don't take my word for it)
+
+robot_2wd/src/main.c (Tutorial 1 project)
+  no GPIO used — log-only over the USB serial console
+
+Note: GPIO 9 and GPIO 46 are reused with swapped roles between
+LED_Blink_Use_GPIO_Config and Interupt_example. That's harmless since
+these are separate, never-simultaneous builds — flagging it only so it
+doesn't look like a typo.

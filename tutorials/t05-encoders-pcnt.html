@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>T5 — Encoders with PCNT</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #5fb3ff;
+    --accent-2: #7ee0b3;
+    --warn: #ffb15f;
+    --bad: #ff8080;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 0 0 4rem; line-height: 1.55; }
+  header {
+    padding: 2.2rem 2rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151822, #0f1115);
+  }
+  header .kicker { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  header h1 { margin: 0.3rem 0 0.4rem; font-size: 1.5rem; }
+  header .sub { color: var(--muted); font-size: 0.92rem; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 2rem; }
+  .meta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+  .pill {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 0.3rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+  }
+  .pill b { color: var(--text); }
+  section { margin-top: 2rem; }
+  h2 { font-size: 1.05rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; margin-bottom: 0.9rem; }
+  h3 { font-size: 0.95rem; color: var(--accent-2); margin: 1.1rem 0 0.5rem; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  ol.steps, ul.list { padding-left: 1.3rem; }
+  ol.steps li, ul.list li { margin-bottom: 0.7rem; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 5px;
+    font-size: 0.88em; color: var(--accent-2);
+  }
+  pre {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem;
+  }
+  a { color: var(--accent); }
+  .note {
+    background: rgba(255,177,95,0.08); border: 1px solid rgba(255,177,95,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .note b { color: var(--warn); }
+  .danger {
+    background: rgba(255,128,128,0.08); border: 1px solid rgba(255,128,128,0.35);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .danger b { color: var(--bad); }
+  .checkpoint {
+    background: rgba(126,224,179,0.08); border: 1px solid rgba(126,224,179,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.6rem;
+  }
+  .checkpoint b { color: var(--accent-2); }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.6rem; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .blank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.4em; height: 1.4em; border-radius: 50%;
+    background: var(--accent); color: #0a1a12; font-weight: 700; font-size: 0.78em;
+  }
+  details {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.4rem; margin-top: 0.8rem;
+  }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  details[open] summary { margin-bottom: 0.8rem; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Tutorial 5 of 8 — Drive-first track</div>
+    <h1>Encoders with PCNT</h1>
+    <div class="sub">Turn the quadrature signal from each wheel's encoder into a hardware-counted tick total, with the correct sign for direction.</div>
+    <div class="meta-row">
+      <div class="pill">⏱ <b>75–90 min</b></div>
+      <div class="pill">🎯 Goal: <b>ticks that increase forward, decrease backward, and repeat on hand-turns</b></div>
+      <div class="pill">📍 <b>GPIO 8, 3, 46, 9</b></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>What you're building</h2>
+    <div class="card">
+      <p>Each wheel's encoder outputs two square waves, A and B, one edge per small rotation of
+      the shaft. Right now those edges go nowhere. By the end of this tutorial, the ESP32-S3's
+      <b>PCNT</b> (pulse counter) hardware peripheral will be watching both signals for each
+      wheel and holding a running tick total you can read at any time — no CPU cycles spent
+      polling, no missed edges even at speed.</p>
+      <pre>encoder A/B (motor A)  ──►  PCNT unit 0  ──►  int16 tick count
+encoder A/B (motor B)  ──►  PCNT unit 1  ──►  int16 tick count</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Concepts, explained inline</h2>
+    <div class="card">
+      <h3>Quadrature: two signals, one direction</h3>
+      <p>A single encoder channel only tells you <i>that</i> the shaft turned, not <i>which
+      way</i>. Quadrature encoders fix this with a second channel, B, whose square wave is
+      shifted 90° from A. Which one leads the other tells you direction:</p>
+      <pre>Forward (A leads B):        Backward (B leads A):
+
+A  ┐   ┌───┐   ┌───┐        A    ┐   ┌───┐   ┌───┐
+   └───┘   └───┘   └──           └───┘   └───┘   └──
+B    ┐   ┌───┐   ┌───┐      B  ┐   ┌───┐   ┌───┐
+     └───┘   └───┘   └           └───┘   └───┘   └──</pre>
+      <p>Read as a 2-bit state (A,B), one full electrical cycle steps through 4 states in a
+      fixed order — forward and backward walk that order in opposite directions:</p>
+      <table>
+        <tr><th>Direction</th><th>State sequence (A,B)</th></tr>
+        <tr><td>Forward</td><td><code>00 → 10 → 11 → 01 → 00 …</code></td></tr>
+        <tr><td>Backward</td><td><code>00 → 01 → 11 → 10 → 00 …</code></td></tr>
+      </table>
+      <p>Counting <i>every</i> edge on <i>both</i> channels (4 transitions per full cycle) is
+      called <b>4× decoding</b> — 4 counts per encoder line, the highest resolution you can get
+      without extra hardware. That's what the PCNT edge/level action pattern below implements.</p>
+
+      <h3>Why PCNT hardware, not a GPIO interrupt per edge</h3>
+      <p>If you've just read about ESP-IDF GPIO interrupts, the obvious first idea is an ISR on
+      every A/B edge that increments a counter. That works at low speed and falls apart at
+      wheel-turning speed:</p>
+      <table>
+        <tr><th></th><th>GPIO ISR per edge</th><th>PCNT hardware</th></tr>
+        <tr><td>CPU cost</td><td>one interrupt per edge, forever</td><td>~zero — counting happens in a hardware register</td></tr>
+        <tr><td>Missed edges</td><td>possible if the CPU is busy elsewhere</td><td>no — hardware can't get "busy"</td></tr>
+        <tr><td>Debounce/glitch</td><td>you write it yourself</td><td>built-in glitch filter (nanosecond-scale)</td></tr>
+      </table>
+      <p>Same reason PWM uses the LEDC peripheral instead of you toggling a pin in a loop — offload
+      anything periodic and time-critical to dedicated hardware when the chip has it.</p>
+
+      <h3>What this chip actually has</h3>
+      <p>Verified in <code>soc/esp32s3/include/soc/soc_caps.h</code>:</p>
+      <table>
+        <tr><th>Capability</th><th>Value</th></tr>
+        <tr><td><code>SOC_PCNT_UNITS_PER_GROUP</code></td><td>4</td></tr>
+        <tr><td><code>SOC_PCNT_CHANNELS_PER_UNIT</code></td><td>2</td></tr>
+      </table>
+      <p>4 independent counting units, 2 channels each — exactly enough for one unit per wheel,
+      both channels used for 4× decoding. Nothing left over for a third wheel if you ever add one,
+      but you don't need it here.</p>
+
+      <h3>API: use <code>pulse_cnt.h</code>, not <code>pcnt.h</code></h3>
+      <div class="note"><b>Most tutorials and forum posts online use the old driver.</b>
+      ESP-IDF ≥5.0 replaced <code>driver/pcnt.h</code> with the object-handle-based
+      <code>driver/pulse_cnt.h</code> (<code>pcnt_new_unit</code>, <code>pcnt_new_channel</code>,
+      <code>pcnt_channel_set_edge_action</code>...). They are not interchangeable — code written
+      against the old API won't compile against this IDF version. A working reference in the
+      current API already exists on this machine:
+      <code>$IDF_PATH/examples/peripherals/pcnt/rotary_encoder/</code>.</div>
+
+      <h3>Gotcha 1 — the counter is 16-bit and wraps</h3>
+      <p>You configure a <code>high_limit</code> / <code>low_limit</code> (e.g. ±100). Once the
+      count reaches either, it wraps back around rather than overflowing silently — but it still
+      means <code>pcnt_unit_get_count()</code> alone cannot track total distance travelled, only
+      recent motion. Fine for measuring speed (T6), not enough by itself for a running distance
+      total — that needs a watch-point callback that increments a separate overflow counter each
+      time a limit is hit. Keep this in mind; it's exactly what T6 builds on.</p>
+
+      <h3>Gotcha 2 — two of your encoder pins are strapping pins</h3>
+      <div class="danger"><b>Look this up before wiring anything permanently.</b>
+      <code>enAB</code> is GPIO3 and <code>enBA</code> is GPIO46 in your current pin map. Both
+      appear on Espressif's ESP32-S3 strapping-pin list — pins sampled at reset to configure boot
+      behaviour. An encoder holding one of these high or low during power-up/reset can change how
+      the chip boots. Find the ESP32-S3 datasheet's strapping-pin table yourself and check GPIO3
+      and GPIO46 against it — this is the task below, not something to take on faith.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your hardware</h2>
+    <div class="card">
+      <table>
+        <tr><th>Signal</th><th>GPIO</th><th>Note</th></tr>
+        <tr><td><code>enAA</code> — motor A, channel A</td><td>8</td><td></td></tr>
+        <tr><td><code>enAB</code> — motor A, channel B</td><td>3</td><td>⚠ strapping pin — verify</td></tr>
+        <tr><td><code>enBA</code> — motor B, channel A</td><td>46</td><td>⚠ strapping pin — verify</td></tr>
+        <tr><td><code>enBB</code> — motor B, channel B</td><td>9</td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code skeleton</h2>
+    <div class="card">
+      <p>One PCNT unit per wheel. This shows the shape for motor A's unit — you write motor B's
+      the same way, then a place to read both. Fill each <span class="blank">n</span>.</p>
+      <pre>#include "driver/pulse_cnt.h"
+
+#define ENC_HIGH_LIMIT <span class="blank">1</span>
+#define ENC_LOW_LIMIT  <span class="blank">1</span>
+
+pcnt_unit_handle_t unitA = NULL;
+
+void encoders_init(void)
+{
+    pcnt_unit_config_t unit_cfg = {
+        .high_limit = ENC_HIGH_LIMIT,
+        .low_limit  = ENC_LOW_LIMIT,
+    };
+    ESP_ERROR_CHECK(pcnt_new_unit(&unit_cfg, &unitA));
+
+    pcnt_glitch_filter_config_t filter_cfg = {
+        .max_glitch_ns = <span class="blank">2</span>,
+    };
+    ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(unitA, &filter_cfg));
+
+    pcnt_chan_config_t chanA_cfg = {
+        .edge_gpio_num  = <span class="blank">3</span>,
+        .level_gpio_num = <span class="blank">3</span>,
+    };
+    pcnt_channel_handle_t chanA = NULL;
+    ESP_ERROR_CHECK(pcnt_new_channel(unitA, &chanA_cfg, &chanA));
+
+    pcnt_chan_config_t chanB_cfg = {
+        .edge_gpio_num  = <span class="blank">4</span>,
+        .level_gpio_num = <span class="blank">4</span>,
+    };
+    pcnt_channel_handle_t chanB = NULL;
+    ESP_ERROR_CHECK(pcnt_new_channel(unitA, &chanB_cfg, &chanB));
+
+    // 4x decode: every edge on A or B counts, direction set by the other
+    // channel's current level
+    ESP_ERROR_CHECK(pcnt_channel_set_edge_action(chanA,
+        <span class="blank">5</span>, <span class="blank">5</span>));
+    ESP_ERROR_CHECK(pcnt_channel_set_level_action(chanA,
+        <span class="blank">6</span>, <span class="blank">6</span>));
+
+    ESP_ERROR_CHECK(pcnt_channel_set_edge_action(chanB,
+        <span class="blank">7</span>, <span class="blank">7</span>));
+    ESP_ERROR_CHECK(pcnt_channel_set_level_action(chanB,
+        <span class="blank">7</span>, <span class="blank">7</span>));
+
+    ESP_ERROR_CHECK(<span class="blank">8</span>);   // enable the unit
+    ESP_ERROR_CHECK(<span class="blank">8</span>);   // clear count to 0
+    ESP_ERROR_CHECK(<span class="blank">8</span>);   // start counting
+}
+
+// somewhere in your loop:
+int count = 0;
+ESP_ERROR_CHECK(<span class="blank">9</span>);
+ESP_LOGI(TAG, "motor A ticks: %d", count);</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fill-in table</h2>
+    <div class="card">
+      <table>
+        <tr><th>Blank</th><th>What it does</th><th>Where to find it</th><th>Your answer</th></tr>
+        <tr><td><span class="blank">1</span></td><td>Wrap-around bounds for the raw count</td><td>the rotary_encoder example's own choice — any symmetric range works; think about how often you'll read and reset it</td><td></td></tr>
+        <tr><td><span class="blank">2</span></td><td>Ignore pulses shorter than this (electrical noise)</td><td>the example uses a value in the low-microsecond range in nanoseconds</td><td></td></tr>
+        <tr><td><span class="blank">3</span></td><td>Which GPIO edges to count, which GPIO's level decides direction, for channel A</td><td><code>pcnt_chan_config_t</code> struct fields; your <code>enAA</code>/<code>enAB</code> pins</td><td></td></tr>
+        <tr><td><span class="blank">4</span></td><td>Same, for channel B — note A and B swap roles vs. channel A's config</td><td>compare to the example's <code>chan_b_config</code></td><td></td></tr>
+        <tr><td><span class="blank">5</span></td><td>What to do on rising vs. falling edge for channel A</td><td><code>PCNT_CHANNEL_EDGE_ACTION_*</code> enum; match against the forward/backward state table above</td><td></td></tr>
+        <tr><td><span class="blank">6</span></td><td>What to do based on the level of the other channel</td><td><code>PCNT_CHANNEL_LEVEL_ACTION_*</code> enum</td><td></td></tr>
+        <tr><td><span class="blank">7</span></td><td>Same two decisions, for channel B</td><td>the example's <code>chan_b</code> calls — is it identical to A's, or mirrored?</td><td></td></tr>
+        <tr><td><span class="blank">8</span></td><td>Bring the unit from configured to actively counting</td><td>three separate <code>pcnt_unit_*</code> calls, order matters</td><td></td></tr>
+        <tr><td><span class="blank">9</span></td><td>Read the current count into a variable</td><td>one function, takes the unit handle and a pointer</td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checkpoints</h2>
+    <div class="checkpoint">
+      <b>You're done when:</b> both wheels report a tick count over serial; turning a wheel by
+      hand one full revolution and back returns to (approximately) the same count; the sign flips
+      correctly between the two directions; and you've confirmed GPIO3/GPIO46 either boot safely
+      as-is or you've moved the encoder to different pins.
+    </div>
+  </section>
+
+  <section>
+    <h2>Common failure modes</h2>
+    <div class="card">
+      <ul class="list">
+        <li><b>Count stuck at 0.</b> Check the unit was actually <code>start</code>ed, not just
+          <code>enable</code>d — both are required. Also check the encoder's own power pins.</li>
+        <li><b>Count changes but never goes negative.</b> Likely only counting one edge action, or
+          A and B are swapped between the two channel configs — re-check against the state table.</li>
+        <li><b>Count is roughly half or quarter of what you expect.</b> You're getting 1× or 2×
+          decode instead of 4× — check both edge <i>and</i> level actions are set on both channels.</li>
+        <li><b>Erratic jumps at rest.</b> Electrical noise on the line — increase the glitch
+          filter's <code>max_glitch_ns</code>, and check the encoder's ground connection.</li>
+        <li><b>Board misbehaves on boot after wiring GPIO3/46.</b> This is the strapping-pin issue
+          — move the encoder wire to a free GPIO not on the strapping list.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Answer key — open only after you've attempted it</summary>
+      <p>Compare your fill-ins against
+        <code>$IDF_PATH/examples/peripherals/pcnt/rotary_encoder/main/rotary_encoder_example_main.c</code>
+        line by line. It solves exactly this shape of problem (one unit, two channels, 4× decode)
+        for a single rotary encoder — you're instantiating it twice, once per wheel, with your own
+        GPIOs and a glitch filter value you've chosen deliberately rather than copied.</p>
+    </details>
+  </section>
+
+</div>
+
+<footer>Tutorial 5 of 8 · <a href="../guide.html">back to course guide</a></footer>
+
+</body>
+</html>

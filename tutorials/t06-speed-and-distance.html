@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>T6 — Ticks → Metres and m/s</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #5fb3ff;
+    --accent-2: #7ee0b3;
+    --warn: #ffb15f;
+    --bad: #ff8080;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 0 0 4rem; line-height: 1.55; }
+  header {
+    padding: 2.2rem 2rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151822, #0f1115);
+  }
+  header .kicker { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  header h1 { margin: 0.3rem 0 0.4rem; font-size: 1.5rem; }
+  header .sub { color: var(--muted); font-size: 0.92rem; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 2rem; }
+  .meta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+  .pill {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 0.3rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+  }
+  .pill b { color: var(--text); }
+  section { margin-top: 2rem; }
+  h2 { font-size: 1.05rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; margin-bottom: 0.9rem; }
+  h3 { font-size: 0.95rem; color: var(--accent-2); margin: 1.1rem 0 0.5rem; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  ol.steps, ul.list { padding-left: 1.3rem; }
+  ol.steps li, ul.list li { margin-bottom: 0.7rem; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 5px;
+    font-size: 0.88em; color: var(--accent-2);
+  }
+  pre {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem;
+  }
+  a { color: var(--accent); }
+  .note {
+    background: rgba(255,177,95,0.08); border: 1px solid rgba(255,177,95,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .note b { color: var(--warn); }
+  .checkpoint {
+    background: rgba(126,224,179,0.08); border: 1px solid rgba(126,224,179,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.6rem;
+  }
+  .checkpoint b { color: var(--accent-2); }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.6rem; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .blank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.4em; height: 1.4em; border-radius: 50%;
+    background: var(--accent); color: #0a1a12; font-weight: 700; font-size: 0.78em;
+  }
+  details {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.4rem; margin-top: 0.8rem;
+  }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  details[open] summary { margin-bottom: 0.8rem; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Tutorial 6 of 8 — Drive-first track</div>
+    <h1>Ticks → Metres and m/s</h1>
+    <div class="sub">Turn a raw tick count into a distance and a speed you can trust against a tape measure — by measuring your own hardware, not trusting a datasheet guess.</div>
+    <div class="meta-row">
+      <div class="pill">⏱ <b>75–90 min</b></div>
+      <div class="pill">🎯 Goal: <b>reported distance within a few % of a tape measure</b></div>
+      <div class="pill">📍 builds on T5's tick counts</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>What you're building</h2>
+    <div class="card">
+      <p>T5 gave you a hardware tick counter per wheel. This tutorial turns raw ticks into
+      numbers with physical units — metres travelled, metres per second — calibrated against
+      your actual wheels and gearbox rather than a datasheet's nominal spec.</p>
+      <pre>PCNT tick count  ──►  counts-per-revolution  ──►  metres-per-tick
+                                                        │
+                          distance  ◄── accumulate ─────┤
+                          speed     ◄── Δticks / Δt ─────┘</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Concepts, explained inline</h2>
+    <div class="card">
+      <h3>Why measure instead of trusting the datasheet</h3>
+      <p>A commented-out block in the project's old reference code guesses
+      <code>ppr = 11</code>, <code>gear_ratio = 45</code>, <code>wheel_radius = 35</code> — plausible
+      numbers, never verified against this hardware. Gearbox ratios especially are often rounded
+      in marketing copy (a "1:45" gearbox is rarely exactly 45.000). A ratio off by 2% turns into
+      a 2% distance error on every measurement forever, silently. Measuring it yourself costs ten
+      minutes and removes the uncertainty.</p>
+
+      <h3>The chain from ticks to metres</h3>
+      <table>
+        <tr><th>Quantity</th><th>Meaning</th></tr>
+        <tr><td>PPR (pulses per revolution)</td><td>encoder ticks per <i>motor shaft</i> revolution, at 1× decode</td></tr>
+        <tr><td>Decode factor</td><td>4, because T5 configured 4× decoding</td></tr>
+        <tr><td>Gear ratio</td><td>motor shaft revolutions per <i>output/wheel shaft</i> revolution</td></tr>
+        <tr><td>counts_per_rev</td><td><code>PPR × decode_factor × gear_ratio</code> — ticks per one full wheel turn</td></tr>
+        <tr><td>metres_per_tick</td><td><code>(π × wheel_diameter) / counts_per_rev</code></td></tr>
+      </table>
+      <p>Once you have <code>metres_per_tick</code>, distance is just
+      <code>accumulated_ticks × metres_per_tick</code>, and speed is
+      <code>(Δticks / Δt) × metres_per_tick</code>.</p>
+
+      <h3>Measuring counts-per-revolution empirically</h3>
+      <p>Don't multiply the three guessed constants together and hope. Instead: zero the tick
+      count, hand-rotate the wheel exactly <i>N</i> full turns (mark it with tape so you can see
+      the start position), read the tick count, divide by N. Do this for a few values of N and
+      check they agree — that agreement is your evidence the number is real, not a fluke reading.</p>
+
+      <h3>The sampling-window trade-off for speed</h3>
+      <p>Speed isn't a single tick event — it's ticks accumulated over some time window
+      <code>Δt</code>, then divided out. The window length is a real design choice, not a detail:</p>
+      <table>
+        <tr><th>Window Δt</th><th>Effect</th></tr>
+        <tr><td>Short (e.g. 10 ms)</td><td>responds fast, but noisy — few ticks per window means each one shifts the estimate a lot</td></tr>
+        <tr><td>Long (e.g. 500 ms)</td><td>smooth, but laggy — you're reporting "what speed the wheel was going, on average, half a second ago"</td></tr>
+      </table>
+      <p>There's no universally correct answer — it depends how fast you need to react. For this
+      tutorial pick a number, but be ready to justify it: what's the fastest wheel speed you
+      expect, and how many ticks does that give you in your chosen window?</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your hardware</h2>
+    <div class="card">
+      <p>No new pins — this tutorial is pure math and firmware logic layered on T5's tick counts
+      from both encoder units. You'll additionally need a tape measure and something to mark a
+      reference point on each wheel.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code skeleton</h2>
+    <div class="card">
+      <pre>// measured, not guessed — fill these in after the hand-rotation test
+#define COUNTS_PER_REV   <span class="blank">1</span>
+#define WHEEL_DIAMETER_M <span class="blank">2</span>
+#define METRES_PER_TICK  <span class="blank">3</span>
+
+typedef struct {
+    int32_t last_count;
+    int32_t total_ticks;      // signed accumulator — survives PCNT wraparound
+} tick_tracker_t;
+
+void tick_tracker_update(tick_tracker_t *t, pcnt_unit_handle_t unit)
+{
+    int raw = 0;
+    pcnt_unit_get_count(unit, &raw);
+
+    int32_t delta = <span class="blank">4</span>;   // handle wraparound between raw and last_count
+    t->total_ticks += delta;
+    t->last_count = raw;
+}
+
+float distance_m(const tick_tracker_t *t)
+{
+    return <span class="blank">5</span>;
+}
+
+float speed_mps(int32_t ticks_this_window, uint32_t window_ms)
+{
+    float ticks_per_sec = <span class="blank">6</span>;
+    return ticks_per_sec * METRES_PER_TICK;
+}
+
+// in your loop, at a fixed interval of WINDOW_MS:
+tick_tracker_t before = tracker;
+tick_tracker_update(&tracker, unitA);
+int32_t window_ticks = <span class="blank">7</span>;
+float v = speed_mps(window_ticks, WINDOW_MS);</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fill-in table</h2>
+    <div class="card">
+      <table>
+        <tr><th>Blank</th><th>What it does</th><th>Where to find it</th><th>Your answer</th></tr>
+        <tr><td><span class="blank">1</span></td><td>Ticks per one full wheel revolution</td><td>your own hand-rotation measurement — average over a few trials of N</td><td></td></tr>
+        <tr><td><span class="blank">2</span></td><td>Wheel diameter in metres</td><td>calipers or a ruler across the wheel, not the tyre's marked size if it's approximate</td><td></td></tr>
+        <tr><td><span class="blank">3</span></td><td>Distance travelled per single tick</td><td>the formula in the concepts section above</td><td></td></tr>
+        <tr><td><span class="blank">4</span></td><td>Change in ticks since last read, correct even if the counter wrapped past its high/low limit</td><td>think about what <code>raw - last_count</code> gives you near a wraparound boundary — may need a case split</td><td></td></tr>
+        <tr><td><span class="blank">5</span></td><td>Total ticks converted to metres</td><td>one multiplication, using a constant already defined above</td><td></td></tr>
+        <tr><td><span class="blank">6</span></td><td>Convert a tick count over a millisecond window into ticks/second</td><td>unit conversion — window_ms is milliseconds, you want ticks per <i>second</i></td><td></td></tr>
+        <tr><td><span class="blank">7</span></td><td>Ticks accumulated during exactly this window</td><td>compare <code>tracker.total_ticks</code> before and after the update call above</td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checkpoints</h2>
+    <div class="checkpoint">
+      <b>You're done when:</b> hand-rotating a wheel exactly 1.0 m of travel (roll it along a tape
+      measure) and the firmware's reported distance agrees within a few percent; the same holds
+      when the motor drives it instead of your hand; and a reported speed value looks sane when
+      you compare "wheel spinning fast" vs "wheel barely turning" against your own eyes.
+    </div>
+  </section>
+
+  <section>
+    <h2>Common failure modes</h2>
+    <div class="card">
+      <ul class="list">
+        <li><b>Distance is consistently off by a fixed ratio</b> (e.g. always ~2× too high or too
+          low). Almost always <code>COUNTS_PER_REV</code> — recheck the hand-rotation measurement,
+          and check whether you're accidentally double-counting the decode factor.</li>
+        <li><b>Distance is right when pushed by hand but wrong when driven by the motor.</b>
+          Check your sampling loop isn't missing an update call, or that the PCNT high/low limit
+          isn't being hit and wrapping faster than your loop reads it.</li>
+        <li><b>Speed reads noisy/jumpy.</b> Sampling window is too short for the tick rate at that
+          speed — widen it, or accept the trade-off and say why.</li>
+        <li><b>Speed reads suspiciously smooth but wrong.</b> Window too long — you're seeing a lag,
+          not a bug; confirm by comparing against a stopwatch-timed distance instead.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Answer key — open only after you've attempted it</summary>
+      <p><b>Blank 4 (wraparound-safe delta):</b> if your PCNT unit is configured with
+      symmetric limits (e.g. ±100), a naive <code>raw - last_count</code> is wrong exactly at the
+      wrap boundary. One robust approach: compute <code>raw - last_count</code>, then if the result
+      jumps by more than half the total range in one step, add or subtract the full range
+      (<code>high_limit - low_limit</code>) to correct for the wrap. Simpler alternative: use a
+      PCNT watch-point callback (as flagged in T5) to increment a separate overflow counter on
+      every wrap, and combine that with the raw reading — this avoids the "did it wrap" guess
+      entirely and is the more robust long-term design.</p>
+      <p><b>Blank 6:</b> <code>ticks_this_window / (window_ms / 1000.0f)</code>, or equivalently
+      <code>(ticks_this_window * 1000.0f) / window_ms</code> to avoid an early float division by a
+      possibly-small number.</p>
+    </details>
+  </section>
+
+</div>
+
+<footer>Tutorial 6 of 8 · <a href="../guide.html">back to course guide</a></footer>
+
+</body>
+</html>

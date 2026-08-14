@@ -1,0 +1,18 @@
+{
+  "idf.currentSetup": "/home/yong/.espressif/v6.0.2/esp-idf",
+  "idf.customExtraVars": {
+    "IDF_TARGET": "esp32s3"
+  },
+  "clangd.path": "/home/yong/.espressif/tools/esp-clang/esp-20.1.1_20250829/esp-clang/bin/clangd",
+  "clangd.arguments": [
+    "--background-index",
+    "--query-driver=**",
+    "--compile-commands-dir=/home/yong/robot_learner/firmware/robot_2wd/build"
+  ],
+  "idf.flashType": "JTAG",
+  "idf.port": "/dev/ttyACM0",
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
+  "idf.monitorPort": "/dev/ttyACM0"
+}

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>T1 — ESP-IDF Project &amp; Flash Round-Trip</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #5fb3ff;
+    --accent-2: #7ee0b3;
+    --warn: #ffb15f;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 0 0 4rem; line-height: 1.55; }
+  header {
+    padding: 2.2rem 2rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151822, #0f1115);
+  }
+  header .kicker { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  header h1 { margin: 0.3rem 0 0.4rem; font-size: 1.5rem; }
+  header .sub { color: var(--muted); font-size: 0.92rem; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 2rem; }
+  .meta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+  .pill {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 0.3rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+  }
+  .pill b { color: var(--text); }
+  section { margin-top: 2rem; }
+  h2 { font-size: 1.05rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; margin-bottom: 0.9rem; }
+  h3 { font-size: 0.95rem; color: var(--accent-2); margin: 1.1rem 0 0.5rem; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  ol.steps, ul.list { padding-left: 1.3rem; }
+  ol.steps li, ul.list li { margin-bottom: 0.7rem; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 5px;
+    font-size: 0.88em; color: var(--accent-2);
+  }
+  pre {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem;
+  }
+  a { color: var(--accent); }
+  .note {
+    background: rgba(255,177,95,0.08); border: 1px solid rgba(255,177,95,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .note b { color: var(--warn); }
+  .checkpoint {
+    background: rgba(126,224,179,0.08); border: 1px solid rgba(126,224,179,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.6rem;
+  }
+  .checkpoint b { color: var(--accent-2); }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.6rem; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Tutorial 1 of 7 — Drive-first track</div>
+    <h1>ESP-IDF Project &amp; Flash Round-Trip</h1>
+    <div class="sub">Get a real ESP-IDF project building, flashing, and logging on your board — the foundation everything else sits on.</div>
+    <div class="meta-row">
+      <div class="pill">⏱ <b>60–75 min</b></div>
+      <div class="pill">🎯 Goal: <b>a log line ticking once/sec over serial</b></div>
+      <div class="pill">📍 <b>/dev/ttyACM0</b></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>Before you start</h2>
+    <div class="card">
+      <p><b>✅ Toolchain is ready.</b> ESP-IDF v5.3.2 (esp32s3 target) finished installing via
+      <code>eim install</code> on 2026-08-09. Verified: <code>idf.py --version</code> prints
+      <code>ESP-IDF v5.3.2-dirty</code> (the "-dirty" suffix is normal/harmless for this kind of
+      clone).</p>
+      <div class="note"><b>To get an IDF-aware terminal:</b> either use the VS Code extension's own
+        terminal (it exports the environment automatically once you open a folder with an IDF
+        project), or run this in any terminal first:
+        <pre>source ~/.espressif/tools/activate_idf_v5.3.2.sh</pre>
+        Then <code>idf.py --version</code> should work in that shell.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Background to look up</h2>
+    <div class="card">
+      <ul class="list">
+        <li><b>ESP-IDF "Hello World" / getting started</b> — Espressif's own walkthrough of what
+          <code>idf.py</code> does and the shape of a minimal project.
+          <a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/get-started/index.html" target="_blank">docs.espressif.com → Get Started (ESP32-S3)</a></li>
+        <li><b>Build system</b> — how a project's top-level <code>CMakeLists.txt</code> differs from
+          a component's <code>CMakeLists.txt</code> (e.g. the one inside <code>main/</code>).
+          <a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-guides/build-system.html" target="_blank">docs.espressif.com → Build System</a></li>
+        <li><b>Logging</b> — <code>ESP_LOGI</code>/<code>ESP_LOGW</code>/<code>ESP_LOGE</code> vs plain
+          <code>printf</code>: what a log tag is, why the IDF logging macros are generally preferred
+          in FreeRTOS-based firmware.
+          <a href="https://docs.espressif.com/projects/esp-idf/en/stable/esp32s3/api-reference/system/log.html" target="_blank">docs.espressif.com → Logging library</a></li>
+        <li><b>Delays in a FreeRTOS task</b> — what <code>vTaskDelay</code> and
+          <code>pdMS_TO_TICKS</code> actually do (this matters again in T7, so understand it now,
+          not just copy it).</li>
+        <li><b>VS Code Espressif extension</b> — the <b>"ESP-IDF: New Project"</b> command, and
+          separately what <b>"ESP-IDF: Set Espressif Device Target"</b> does.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Tasks</h2>
+    <div class="card">
+      <ol class="steps">
+        <li><b>Create the project.</b> Command Palette (<code>Ctrl+Shift+P</code>) →
+          <b>"ESP-IDF: New Project"</b>. Point it at <code>~/robot_learner/firmware</code>. Note what
+          target/board options it shows you and pick the one for the S3. If it offers a template,
+          pick the plainest one (e.g. <code>template-app</code> or <code>hello_world</code>).</li>
+        <li><b>Read before you edit.</b> Open the generated top-level <code>CMakeLists.txt</code> and
+          <code>main/CMakeLists.txt</code> side by side. Write down, in your own words, what each one
+          is responsible for.</li>
+        <li><b>Confirm the target.</b> In a terminal in the project folder, run
+          <code>idf.py set-target esp32s3</code>. Watch what it prints and what changes on disk
+          afterward (hint: look at what appears or changes in the project root).</li>
+        <li><b>Modify <code>main/main.c</code> (or <code>.cpp</code>)</b> so it logs a message once
+          per second, forever, using <code>ESP_LOGI</code> with a tag of your choosing — not
+          <code>printf</code>. Include something that changes each time (e.g. a counter) so you can
+          tell it's actually looping and not stuck.</li>
+        <li><b>Build.</b> <code>idf.py build</code>. Read any errors fully before asking for help —
+          the first error in the log is usually the real one; the rest are often noise from it.</li>
+        <li><b>Flash and monitor.</b> <code>idf.py -p /dev/ttyACM0 flash monitor</code>. Confirm you
+          see your ticking log line. Leave it running for at least 15–20 seconds — a message that only
+          prints once is a different bug than one that never appears.</li>
+        <li><b>Exit cleanly.</b> Find and use the keybinding to exit <code>idf.py monitor</code>
+          without killing your terminal (it's in the banner IDF prints when monitor starts).</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checkpoints</h2>
+    <div class="checkpoint">
+      <b>You're done when:</b> <code>idf.py build</code> exits with no errors, <code>idf.py -p
+      /dev/ttyACM0 flash monitor</code> flashes successfully, and you see a log line incrementing
+      once per second in the monitor output, and you can exit monitor without closing the terminal.
+    </div>
+  </section>
+
+  <section>
+    <h2>Report back before moving to T2</h2>
+    <div class="card">
+      <table>
+        <tr><th>What to tell me</th><th>Why it matters</th></tr>
+        <tr><td>Target/board options the New Project wizard showed you</td><td>confirms the extension is actually toolchain-aware now</td></tr>
+        <tr><td>Which template you picked, and where the project landed</td><td>so T2 references the right paths</td></tr>
+        <tr><td>What <code>idf.py set-target esp32s3</code> printed, and what changed on disk</td><td>the Socratic question — explain it in your own words, don't just quote the docs</td></tr>
+        <tr><td>A copy of your ticking log output (a few lines is enough)</td><td>proof of the full round-trip, and a sanity check on your <code>ESP_LOGI</code> usage</td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Common failure modes</h2>
+    <div class="card">
+      <ul class="list">
+        <li><b>"Permission denied" opening <code>/dev/ttyACM0</code>.</b> Already fixed for this
+          board/user (dialout group + cdc_acm blacklist removed) — if it recurs after a reboot, check
+          <code>groups</code> includes <code>dialout</code> and <code>ls -la /dev/ttyACM0</code>.</li>
+        <li><b>Board doesn't enter flashing mode.</b> Some S3 clones need <code>BOOT</code> held while
+          tapping <code>RESET</code> for the first flash. If <code>idf.py flash</code> hangs at
+          "Connecting...", try that before assuming a wiring/firmware problem.</li>
+        <li><b>Wrong or stale target.</b> If you copy-pasted a project or reused
+          <code>sdkconfig</code> from elsewhere, <code>idf.py set-target</code> may silently not be
+          esp32s3. Re-run it explicitly if the build errors mention a different chip.</li>
+        <li><b><code>idf.py: command not found</code>.</b> Means the IDF environment isn't exported in
+          that terminal (or the install isn't finished). The VS Code extension's own terminal usually
+          exports it automatically — prefer that over an arbitrary shell while you're still confirming
+          the install.</li>
+      </ul>
+    </div>
+  </section>
+
+</div>
+
+<footer>Tutorial 1 of 7 · <a href="../guide.html">back to course guide</a></footer>
+
+</body>
+</html>

@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Robot Learning Course — Self-Localization</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #5fb3ff;
+    --accent-2: #7ee0b3;
+    --warn: #ffb15f;
+    --done: #7ee0b3;
+    --current: #5fb3ff;
+    --upcoming: #454b58;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 0 0 4rem 0;
+    line-height: 1.55;
+  }
+  header {
+    padding: 2.5rem 2rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151822, #0f1115);
+  }
+  header h1 {
+    margin: 0 0 0.3rem;
+    font-size: 1.6rem;
+  }
+  header .sub {
+    color: var(--muted);
+    font-size: 0.95rem;
+  }
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 0 2rem;
+  }
+  .hw-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1.2rem;
+  }
+  .hw-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+  }
+  .hw-card .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .hw-card .value { font-size: 0.95rem; margin-top: 0.2rem; }
+
+  section { margin-top: 2.2rem; }
+  h2 {
+    font-size: 1.1rem;
+    border-left: 3px solid var(--accent);
+    padding-left: 0.6rem;
+    margin-bottom: 0.9rem;
+  }
+
+  .goal {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent-2);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    color: var(--text);
+  }
+  .goal b { color: var(--accent-2); }
+
+  ol.modules { list-style: none; padding: 0; margin: 0; }
+  ol.modules li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.8rem;
+    padding: 0.6rem 0.2rem;
+    border-bottom: 1px solid var(--border);
+  }
+  ol.modules li:last-child { border-bottom: none; }
+  .badge {
+    flex: 0 0 auto;
+    width: 1.6rem; height: 1.6rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 0.1rem;
+  }
+  .badge.done { background: var(--done); color: #0b1a12; }
+  .badge.current { background: var(--current); color: #071522; box-shadow: 0 0 0 3px rgba(95,179,255,0.25); }
+  .badge.upcoming { background: transparent; border: 1px solid var(--upcoming); color: var(--muted); }
+  .mod-title { font-weight: 600; }
+  .mod-desc { color: var(--muted); font-size: 0.9rem; }
+  .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    margin-left: 0.5rem;
+    vertical-align: middle;
+  }
+  .tag.current { background: rgba(95,179,255,0.15); color: var(--accent); }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  .steps { padding-left: 1.2rem; }
+  .steps li { margin-bottom: 0.6rem; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel-2);
+    padding: 0.1rem 0.4rem;
+    border-radius: 5px;
+    font-size: 0.88em;
+    color: var(--accent-2);
+  }
+  pre {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    overflow-x: auto;
+    font-size: 0.85rem;
+  }
+  .note {
+    background: rgba(255,177,95,0.08);
+    border: 1px solid rgba(255,177,95,0.3);
+    border-radius: 8px;
+    padding: 0.8rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 0.8rem;
+  }
+  .note b { color: var(--warn); }
+  .filetree {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--muted);
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .filetree .hl { color: var(--accent-2); }
+  .log-entry {
+    border-left: 2px solid var(--border);
+    padding-left: 1rem;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: var(--muted);
+  }
+  .log-entry b { color: var(--text); }
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.8rem;
+    margin-top: 3rem;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <h1>🤖 Robot Learning Course — Self-Localization</h1>
+    <div class="sub">Teaching log for <span class="mono">~/robot_learner</span> · Socratic / guided-lookup style · started 2026-08-08</div>
+    <div class="hw-grid">
+      <div class="hw-card"><div class="label">MCU</div><div class="value">ESP32-S3-DevKitC clone</div></div>
+      <div class="hw-card"><div class="label">IMU</div><div class="value">GY-85 (ADXL345 + ITG3205 + HMC5883L)</div></div>
+      <div class="hw-card"><div class="label">Motor driver</div><div class="value">TB6612FNG dual driver</div></div>
+      <div class="hw-card"><div class="label">Drive</div><div class="value">2× DC motor w/ encoders, diff-drive</div></div>
+      <div class="hw-card"><div class="label">Toolchain</div><div class="value">Native ESP-IDF (VS Code)</div></div>
+      <div class="hw-card"><div class="label">Serial</div><div class="value">/dev/ttyACM0 (cdc_acm)</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>Near-term goal — the robot runs</h2>
+    <div class="goal">
+      An 8-tutorial <b>drive-first</b> track (60–90 min each): get the robot driving open-loop as a
+      2-wheel differential robot first, <i>then</i> make it accurate with encoders and closed-loop
+      control. IMU/GY-85 work and full pose fusion are deferred until after that.
+    </div>
+  </section>
+
+  <section>
+    <h2>Stage 1 goal (after the drive-first track)</h2>
+    <div class="goal">
+      The robot maintains and reports a continuously updated estimate of its own pose —
+      <b>(x, y, θ)</b> — fused from wheel-encoder odometry and the GY-85 IMU.
+      <br>"It knows where it is" means it can print/log this estimate in real time.
+    </div>
+  </section>
+
+  <section>
+    <h2>Tutorials — drive-first track</h2>
+    <ol class="modules">
+      <li>
+        <div class="badge done">T1</div>
+        <div>
+          <div class="mod-title">ESP-IDF project &amp; flash round-trip</div>
+          <div class="mod-desc">60–75 min · idf.py build/flash/monitor round-trip on /dev/ttyACM0. <a href="tutorials/t01-esp-idf-bringup.html">Open tutorial →</a></div>
+        </div>
+      </li>
+      <li>
+        <div class="badge done">T2</div>
+        <div>
+          <div class="mod-title">Wiring audit, pin map &amp; power topology</div>
+          <div class="mod-desc">60–75 min · done informally via code review (GPIO18 fake-ground caught &amp; fixed in hardware). pinmap.md still not written formally.</div>
+        </div>
+      </li>
+      <li>
+        <div class="badge done">T3</div>
+        <div>
+          <div class="mod-title">TB6612 + LEDC: one wheel, then two</div>
+          <div class="mod-desc">75–90 min · motorMove(mot, value), independent LEDC channels per motor, both directions, deadband/scale fixed.</div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">T4</div>
+        <div>
+          <div class="mod-title">drive(v, ω) open loop <span class="tag current">robot runs here</span></div>
+          <div class="mod-desc">75–90 min · differential-drive kinematics → duty. Drives, reverses, pivots, arcs on command. <a href="tutorials/t07-inverse-kinematics.html">Open tutorial →</a> <i>(page numbered T7, sequence renumbering pending — see note below)</i></div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">T5</div>
+        <div>
+          <div class="mod-title">Wheel encoders via PCNT <span class="tag current">current</span></div>
+          <div class="mod-desc">75–90 min · quadrature tick counting with the current driver/pulse_cnt.h API, correct sign per direction. <a href="tutorials/t05-encoders-pcnt.html">Open tutorial →</a></div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">T6</div>
+        <div>
+          <div class="mod-title">Ticks → metres and m/s</div>
+          <div class="mod-desc">75–90 min · empirically derive counts/rev, wheel diameter; distance and speed within a few % of a tape measure. <a href="tutorials/t06-speed-and-distance.html">Open tutorial →</a></div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">T7</div>
+        <div>
+          <div class="mod-title">drive(v, ω): inverse kinematics</div>
+          <div class="mod-desc">75–90 min · (v, ω) → per-wheel duty, with saturation handled correctly. Forward kinematics/odometry (ticks → x,y,θ) is deferred. <a href="tutorials/t07-inverse-kinematics.html">Open tutorial →</a></div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">T8</div>
+        <div>
+          <div class="mod-title">Closed-loop PI + capstone</div>
+          <div class="mod-desc">90 min · per-wheel PI speed control (anti-windup, output clamping, 1000&nbsp;Hz tick + vTaskDelayUntil), drives straight, completes a 1&nbsp;m square. <a href="tutorials/t08-closed-loop-pi.html">Open tutorial →</a></div>
+        </div>
+      </li>
+    </ol>
+    <div class="note"><b>Numbering note:</b> motor work (T2–T4) happened out of order, driven by
+      code the user wrote ahead of the tutorials, and was resolved through review rather than
+      standalone pages — see <code>~/.claude/plans/wild-puzzling-map.md</code> for that history.
+      The four new pages (encoders → speed/distance → inverse kinematics → closed-loop PI) are
+      files <code>t05</code>–<code>t08</code> on disk; this list's T4/T7 numbering is being kept
+      provisional rather than renumbered until the whole sequence is renumbered at once.</div>
+  </section>
+
+  <section>
+    <h2>Full syllabus (after the robot runs)</h2>
+    <ol class="modules">
+      <li>
+        <div class="badge upcoming">A</div>
+        <div>
+          <div class="mod-title">I2C bus &amp; GY-85 raw comms</div>
+          <div class="mod-desc">I2C scan, register-level reads from ADXL345 / ITG3205 / HMC5883L.</div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">B</div>
+        <div>
+          <div class="mod-title">Sensor calibration &amp; units</div>
+          <div class="mod-desc">Counts → g / °/s / heading, gyro bias, hard/soft-iron basics.</div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">C</div>
+        <div>
+          <div class="mod-title">IMU-based heading</div>
+          <div class="mod-desc">Gyro integration, complementary/Kalman fusion with magnetometer heading.</div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">D</div>
+        <div>
+          <div class="mod-title">Sensor fusion for pose</div>
+          <div class="mod-desc">Combine encoder (x, y) with IMU-corrected heading into one pose estimate.</div>
+        </div>
+      </li>
+      <li>
+        <div class="badge upcoming">E</div>
+        <div>
+          <div class="mod-title">Stretch: logging / visualization / EKF</div>
+          <div class="mod-desc">Plot the driven path, discuss a proper EKF framing.</div>
+        </div>
+      </li>
+    </ol>
+    <div class="note"><b>Reorder note:</b> this replaces the original modules 1–9 in syllabus.md, which
+    interleaved GY-85 work before motors. The drive-first track promotes motor/encoder work so the
+    robot moves at T4; IMU/fusion work is unchanged in content, just moved after T7.</div>
+  </section>
+
+  <section>
+    <h2>Where we are right now — Tutorial 1</h2>
+    <div class="card">
+      <p><b>Board bring-up is done:</b> <code>cdc_acm</code> was blacklisted system-wide (leftover from the JZ01 OpenStick work) — removed the blacklist line, reloaded the module, and <code>/dev/ttyACM0</code> now shows up reliably.</p>
+      <p>Found an existing half-built project at <code>~/Documents/PlatformIO/Projects/wheel_robot</code> (PlatformIO/Arduino, pins declared, nothing implemented) plus a cloned reference repo with ready-made GY-85 drivers. Decision: rebuild in native ESP-IDF, porting only the pin assignments; the reference repo is answer-key only. Both moved into <code>~/robot_learner/reference/</code>.</p>
+      <p><b>✅ ESP-IDF install finished.</b> It was never actually set up on this Linux machine — the VS Code extension had stale config synced from another computer. Fixed directly (not Socratic — infrastructure): cleared the stale settings, installed missing build prereqs (<code>flex</code>/<code>bison</code>/<code>gperf</code>/<code>ccache</code>) via a handed-off script, and ran <code>eim install -t esp32s3 -i v5.3.2</code>. Verified: <code>idf.py --version</code> → <code>ESP-IDF v5.3.2-dirty</code>. Tutorial 1 is fully unblocked.</p>
+      <p>The course also pivoted to a <b>drive-first track</b>: 7 tutorials, 60–90 min each, ending with the robot driving open-loop as a 2-wheel differential robot at T4 — before any IMU/localization work.</p>
+      <div class="filetree">~/robot_learner/
+├── syllabus.md
+├── progress.md
+├── guide.html            <span class="hl">← this page</span>
+├── fix_cdc_acm.sh
+├── fix_idf_prereqs.sh
+├── idf_install.log       <span class="hl">ESP-IDF install progress</span>
+├── tutorials/
+│   └── t01-esp-idf-bringup.html   <span class="hl">← start here</span>
+└── reference/
+    ├── wheel_robot_platformio/   <span class="hl">old pin assignments to port over</span>
+    └── esp-idf-gy85/             <span class="hl">answer-key only — don't copy from</span></div>
+    </div>
+
+    <div class="card">
+      <b>Next action (your turn):</b>
+      <ol class="steps">
+        <li>Confirm the ESP-IDF install finished: <code>idf.py --version</code> in a fresh terminal.</li>
+        <li>Open <a href="tutorials/t01-esp-idf-bringup.html">Tutorial 1</a> and work through it.</li>
+        <li>Report back the items listed at the bottom of that tutorial before starting T2.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section>
+    <h2>Session log</h2>
+    <div class="log-entry">
+      <b>2026-08-08</b> — Course scoped (self-localization on real hardware, not a generic ML survey). Toolchain switched from PlatformIO to native ESP-IDF. Diagnosed and fixed a system-level <code>cdc_acm</code> blacklist blocking serial. Found, reconciled, and relocated prior half-finished work into <code>~/robot_learner/reference/</code>.
+    </div>
+    <div class="log-entry">
+      <b>2026-08-09</b> — Pivoted to a 7-tutorial drive-first track (plan at <code>~/.claude/plans/wild-puzzling-map.md</code>): robot drives open-loop by T4, encoders/calibration/closed-loop by T7, IMU/localization after. Discovered ESP-IDF was never actually installed here; fixed the stale extension config and prereqs, install running in background. Tutorial 1 written and handed off.
+    </div>
+  </section>
+
+</div>
+
+<footer>Course guide · regenerate by asking your tutor to update <code>guide.html</code></footer>
+
+</body>
+</html>

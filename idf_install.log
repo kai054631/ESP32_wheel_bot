@@ -1,0 +1,340 @@
+2026-08-09 01:22:27 -  1 - 08 - INFO - Returned settings: Ok(Settings { path: Some("/home/yong/.espressif"), idf_path: None, esp_idf_json_path: Some("/home/yong/.espressif/tools"), tool_download_folder_name: Some("/home/yong/.espressif/dist"), tool_install_folder_name: Some("/home/yong/.espressif/tools"), target: Some(["esp32s3"]), idf_versions: Some(["v5.3.2"]), tools_json_file: Some("tools/tools.json"), config_file: None, config_file_save_path: Some("eim_config.toml"), non_interactive: Some(true), wizard_all_questions: Some(false), mirror: Some("https://github.com"), idf_mirror: Some("https://github.com"), pypi_mirror: Some("https://pypi.org/simple"), recurse_submodules: Some(true), install_all_prerequisites: Some(false), idf_features: None, idf_features_per_version: None, idf_tools: None, idf_tools_per_version: None, repo_stub: None, skip_prerequisites_check: Some(false), version_name: None, cleanup: Some(true), python_env_folder_name: Some("python"), use_local_archive: None, activation_script_path_override: Some("/home/yong/.espressif/tools"), python_version_override: Some("python313") })
+2026-08-09 01:22:29 -  1 - 08 - INFO - All prerequisites are satisfied!
+2026-08-09 01:22:29 -  1 - 08 - INFO - Running python sanity check
+2026-08-09 01:22:30 -  1 - 08 - INFO - Your Python meets the requirements
+2026-08-09 01:22:30 -  1 - 08 - INFO - Starting mirror latency checks (2 candidates)...
+2026-08-09 01:22:30 -  1 - 08 - INFO - Mirror score: https://github.com -> 118
+2026-08-09 01:22:33 -  1 - 08 - WARN - Mirror ping failed with HEAD for https://jihulab.com/esp-mirror
+2026-08-09 01:22:33 -  1 - 08 - INFO - Mirror get score: https://github.com -> 91
+2026-08-09 01:22:35 -  1 - 08 - INFO - Mirror get score: https://jihulab.com/esp-mirror -> 1863
+2026-08-09 01:22:35 -  1 - 08 - INFO - Selected IDF mirror: https://github.com (91 ms)
+2026-08-09 01:22:35 -  1 - 08 - INFO - Starting mirror latency checks (3 candidates)...
+2026-08-09 01:22:35 -  1 - 08 - INFO - Mirror score: https://github.com -> 87
+2026-08-09 01:22:35 -  1 - 08 - INFO - Mirror score: https://dl.espressif.com/github_assets -> 229
+2026-08-09 01:22:38 -  1 - 08 - WARN - Mirror ping failed with HEAD for https://dl.espressif.cn/github_assets
+2026-08-09 01:22:38 -  1 - 08 - INFO - Mirror get score: https://github.com -> 93
+2026-08-09 01:22:38 -  1 - 08 - INFO - Mirror get score: https://dl.espressif.com/github_assets -> 136
+2026-08-09 01:22:40 -  1 - 08 - INFO - Mirror get score: https://dl.espressif.cn/github_assets -> 1832
+2026-08-09 01:22:40 -  1 - 08 - INFO - Selected Tools mirror: https://github.com (93 ms)
+2026-08-09 01:22:40 -  1 - 08 - INFO - Starting mirror latency checks (4 candidates)...
+2026-08-09 01:22:40 -  1 - 08 - INFO - Mirror score: https://pypi.org/simple -> 86
+2026-08-09 01:22:41 -  1 - 08 - WARN - Mirror ping failed with HEAD for https://mirrors.aliyun.com/pypi/simple
+2026-08-09 01:22:41 -  1 - 08 - INFO - Mirror get score: https://pypi.org/simple -> 65
+2026-08-09 01:22:41 -  1 - 08 - WARN - Mirror ping failed for https://mirrors.aliyun.com: 403
+2026-08-09 01:22:41 -  1 - 08 - INFO - Unable to measure get latency for https://mirrors.aliyun.com/pypi/simple: 3s
+2026-08-09 01:22:44 -  1 - 08 - INFO - Mirror get score: https://pypi.tuna.tsinghua.edu.cn/simple -> 2861
+2026-08-09 01:22:47 -  1 - 08 - WARN - Mirror ping failed for https://pypi.mirrors.ustc.edu.cn: reqwest::Error { kind: Request, url: "https://pypi.mirrors.ustc.edu.cn/", source: TimedOut }
+2026-08-09 01:22:47 -  1 - 08 - INFO - Unable to measure get latency for https://pypi.mirrors.ustc.edu.cn/simple: 3s
+2026-08-09 01:22:47 -  1 - 08 - INFO - Selected PyPI mirror: https://pypi.org/simple (65 ms)
+Non-interactive mode: selecting all required features by default
+2026-08-09 01:22:48 -  1 - 08 - INFO - Non-interactive mode: selecting all tools by default (QEMU excluded)
+2026-08-09 01:22:48 -  1 - 08 - INFO - Cloning ESP-IDF
+2026-08-09 01:22:48 -  1 - 08 - INFO - Cloning repository from CloneOptions { url: "https://github.com/espressif/esp-idf.git", path: "/home/yong/.espressif/v5.3.2/esp-idf", reference: Tag("v5.3.2"), recurse_submodules: true, shallow: true }
+2026-08-09 01:23:30 -  1 - 08 - INFO - Checking out tag: v5.3.2
+2026-08-09 01:23:30 -  1 - 08 - INFO - Checking out commit 9d7f2d69f50d1288526d4f1027108e314e8c879f to worktree
+2026-08-09 01:23:32 -  1 - 08 - INFO - Cloned repository to /home/yong/.espressif/v5.3.2/esp-idf proceeding to submodules...
+2026-08-09 01:23:32 -  1 - 08 - INFO - Starting submodule update...
+2026-08-09 01:23:32 -  1 - 08 - INFO - Recurse submodules is TRUE
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bootloader/subproject/components/micro-ecc/micro-ecc -> 24c60e243580c7868f4334a1ba3123481fe1aa48
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/controller/lib_esp32 -> 5c4a62c1d4577d1352d28708c790ba2b4f741842
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/controller/lib_esp32c2/esp32c2-bt-lib -> 99ea7d1483a9e5329d0801293d8c051d0fddefd7
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/controller/lib_esp32c3_family -> 6470c01165cf4edeed5d826ce4082a90deb92efd
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/controller/lib_esp32c5/esp32c5-bt-lib -> 77c67a4d06c95113a2d1766892cde59f5af744af
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/controller/lib_esp32c6/esp32c6-bt-lib -> b86a06d38cc3de4660b67d992259f727ba590296
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/controller/lib_esp32h2/esp32h2-bt-lib -> 90f1ef76ab9021b123e3037e9df782549f386e30
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/esp_ble_mesh/lib/lib -> 590bd6e3d2b20327138a96e44cf3da6d43a8abdc
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/bt/host/nimble/nimble -> 32b2124f54238e70ecd4c72a753698babdd939f7
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/cmock/CMock -> eeecc49ce8af123cf8ad40efdb9673e37b56230f
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/esp_coex/lib -> 7953ba459a01d5c08f038cad8eaabb4e37d2505d
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/esp_phy/lib -> 1f551c5367daa87a29e0c4f724d6cf809a1841ad
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/esp_wifi/lib -> 75710820e86e573220002b3aab4f5e43ad10d4ec
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/heap/tlsf -> 8fc595fe223cd0b3b5d7b29eb86825e4bd38e6e8
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/json/cJSON -> acc76239bee01d8e9c858ae2cab296704e52d916
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/lwip/lwip -> 0606eed9d8b98a797514fdf6eabb4daf1c8c8cd9
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/mbedtls/mbedtls -> 98fcfd6d2cea90d306e8fde8e5bffd6087c9cda8
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/mqtt/esp-mqtt -> cac1552e62b0474c162547b7cce345d7cd1aecfe
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/openthread/lib -> 55f18e4cc6a249974247fd408aad79b1049d4b31
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/openthread/openthread -> 005c5cefc22aaf0396e4327ee7f2e0ad32a7733b
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/protobuf-c/protobuf-c -> abc67a11c6db271bedbb9f58be85d6f4e2ea8389
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/spiffs/spiffs -> 0dbb3f71c5f6fae3747a9d935372773762baf852
+2026-08-09 01:23:32 -  1 - 08 - INFO - Found submodule gitlink: components/unity/unity -> bf560290f6020737eafaa8b5cbd2177c3956c03f
+2026-08-09 01:23:32 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller
+2026-08-09 01:23:32 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32
+2026-08-09 01:23:32 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32 before init: []
+2026-08-09 01:23:32 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32
+2026-08-09 01:23:32 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32
+2026-08-09 01:23:32 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32
+2026-08-09 01:23:33 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/controller/lib_esp32
+2026-08-09 01:23:33 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/controller/lib_esp32
+2026-08-09 01:23:33 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bootloader/subproject/components/micro-ecc
+2026-08-09 01:23:33 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bootloader/subproject/components/micro-ecc/micro-ecc
+2026-08-09 01:23:33 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bootloader/subproject/components/micro-ecc/micro-ecc before init: []
+2026-08-09 01:23:33 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bootloader/subproject/components/micro-ecc/micro-ecc
+2026-08-09 01:23:33 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bootloader/subproject/components/micro-ecc/micro-ecc
+2026-08-09 01:23:33 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bootloader/subproject/components/micro-ecc/micro-ecc
+2026-08-09 01:23:34 -  1 - 08 - INFO - ✓ Submodule complete: components/bootloader/subproject/components/micro-ecc/micro-ecc
+2026-08-09 01:23:34 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bootloader/subproject/components/micro-ecc/micro-ecc
+2026-08-09 01:23:34 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/spiffs
+2026-08-09 01:23:34 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/spiffs/spiffs
+2026-08-09 01:23:34 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/spiffs/spiffs before init: []
+2026-08-09 01:23:34 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/spiffs/spiffs
+2026-08-09 01:23:34 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/spiffs/spiffs
+2026-08-09 01:23:34 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/spiffs/spiffs
+2026-08-09 01:23:35 -  1 - 08 - INFO - ✓ Submodule complete: components/spiffs/spiffs
+2026-08-09 01:23:35 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/spiffs/spiffs
+2026-08-09 01:23:35 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/json
+2026-08-09 01:23:35 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/json/cJSON
+2026-08-09 01:23:35 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/json/cJSON before init: []
+2026-08-09 01:23:35 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/json/cJSON
+2026-08-09 01:23:35 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/json/cJSON
+2026-08-09 01:23:35 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/json/cJSON
+2026-08-09 01:23:36 -  1 - 08 - INFO - ✓ Submodule complete: components/json/cJSON
+2026-08-09 01:23:36 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/json/cJSON
+2026-08-09 01:23:36 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mbedtls
+2026-08-09 01:23:36 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mbedtls/mbedtls
+2026-08-09 01:23:36 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mbedtls/mbedtls before init: []
+2026-08-09 01:23:36 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mbedtls/mbedtls
+2026-08-09 01:23:36 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mbedtls/mbedtls
+2026-08-09 01:23:36 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mbedtls/mbedtls
+2026-08-09 01:23:41 -  1 - 08 - INFO - ✓ Submodule complete: components/mbedtls/mbedtls
+2026-08-09 01:23:41 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/mbedtls/mbedtls
+2026-08-09 01:23:41 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/lwip
+2026-08-09 01:23:41 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/lwip/lwip
+2026-08-09 01:23:41 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/lwip/lwip before init: []
+2026-08-09 01:23:41 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/lwip/lwip
+2026-08-09 01:23:41 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/lwip/lwip
+2026-08-09 01:23:41 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/lwip/lwip
+2026-08-09 01:23:43 -  1 - 08 - INFO - ✓ Submodule complete: components/lwip/lwip
+2026-08-09 01:23:43 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/lwip/lwip
+2026-08-09 01:23:43 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mqtt
+2026-08-09 01:23:43 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mqtt/esp-mqtt
+2026-08-09 01:23:43 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mqtt/esp-mqtt before init: []
+2026-08-09 01:23:43 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mqtt/esp-mqtt
+2026-08-09 01:23:43 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mqtt/esp-mqtt
+2026-08-09 01:23:43 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/mqtt/esp-mqtt
+2026-08-09 01:23:44 -  1 - 08 - INFO - ✓ Submodule complete: components/mqtt/esp-mqtt
+2026-08-09 01:23:44 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/mqtt/esp-mqtt
+2026-08-09 01:23:44 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/protobuf-c
+2026-08-09 01:23:44 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/protobuf-c/protobuf-c
+2026-08-09 01:23:44 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/protobuf-c/protobuf-c before init: []
+2026-08-09 01:23:44 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/protobuf-c/protobuf-c
+2026-08-09 01:23:44 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/protobuf-c/protobuf-c
+2026-08-09 01:23:44 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/protobuf-c/protobuf-c
+2026-08-09 01:23:45 -  1 - 08 - INFO - ✓ Submodule complete: components/protobuf-c/protobuf-c
+2026-08-09 01:23:45 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/protobuf-c/protobuf-c
+2026-08-09 01:23:45 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/unity
+2026-08-09 01:23:45 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/unity/unity
+2026-08-09 01:23:45 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/unity/unity before init: []
+2026-08-09 01:23:45 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/unity/unity
+2026-08-09 01:23:45 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/unity/unity
+2026-08-09 01:23:45 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/unity/unity
+2026-08-09 01:23:47 -  1 - 08 - INFO - ✓ Submodule complete: components/unity/unity
+2026-08-09 01:23:47 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/unity/unity
+2026-08-09 01:23:47 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/host/nimble
+2026-08-09 01:23:47 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/host/nimble/nimble
+2026-08-09 01:23:47 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/host/nimble/nimble before init: []
+2026-08-09 01:23:47 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/host/nimble/nimble
+2026-08-09 01:23:47 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/host/nimble/nimble
+2026-08-09 01:23:47 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/host/nimble/nimble
+2026-08-09 01:23:49 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/host/nimble/nimble
+2026-08-09 01:23:49 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/host/nimble/nimble
+2026-08-09 01:23:49 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_wifi
+2026-08-09 01:23:49 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_wifi/lib
+2026-08-09 01:23:49 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_wifi/lib before init: []
+2026-08-09 01:23:49 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_wifi/lib
+2026-08-09 01:23:49 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_wifi/lib
+2026-08-09 01:23:49 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_wifi/lib
+2026-08-09 01:23:52 -  1 - 08 - INFO - ✓ Submodule complete: components/esp_wifi/lib
+2026-08-09 01:23:52 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/esp_wifi/lib
+2026-08-09 01:23:52 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock
+2026-08-09 01:23:52 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock
+2026-08-09 01:23:52 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock before init: []
+2026-08-09 01:23:52 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock
+2026-08-09 01:23:52 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock
+2026-08-09 01:23:52 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock
+2026-08-09 01:23:53 -  1 - 08 - INFO - ✓ Submodule complete: components/cmock/CMock
+2026-08-09 01:23:53 -  1 - 08 - INFO - Found submodule gitlink: vendor/c_exception -> 71b47be7c950f1bf5f7e5303779fa99a16224bb6
+2026-08-09 01:23:53 -  1 - 08 - INFO - Found submodule gitlink: vendor/unity -> cf949f45ca6d172a177b00da21310607b97bc7a7
+2026-08-09 01:23:53 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor
+2026-08-09 01:23:53 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/unity
+2026-08-09 01:23:53 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/unity before init: []
+2026-08-09 01:23:53 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/unity
+2026-08-09 01:23:53 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/unity
+2026-08-09 01:23:53 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/unity
+2026-08-09 01:23:53 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/cmock/CMock
+2026-08-09 01:23:55 -  1 - 08 - INFO - ✓ Submodule complete: vendor/unity
+2026-08-09 01:23:55 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: vendor/unity
+2026-08-09 01:23:55 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor
+2026-08-09 01:23:55 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/c_exception
+2026-08-09 01:23:55 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/c_exception before init: []
+2026-08-09 01:23:55 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/c_exception
+2026-08-09 01:23:55 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/c_exception
+2026-08-09 01:23:55 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/cmock/CMock/modules/vendor/c_exception
+2026-08-09 01:23:56 -  1 - 08 - INFO - ✓ Submodule complete: vendor/c_exception
+2026-08-09 01:23:56 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread
+2026-08-09 01:23:56 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/openthread
+2026-08-09 01:23:56 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: vendor/c_exception
+2026-08-09 01:23:56 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/openthread before init: []
+2026-08-09 01:23:56 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/openthread
+2026-08-09 01:23:56 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/openthread
+2026-08-09 01:23:56 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/openthread
+2026-08-09 01:24:01 -  1 - 08 - INFO - ✓ Submodule complete: components/openthread/openthread
+2026-08-09 01:24:01 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/openthread/openthread
+2026-08-09 01:24:01 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller
+2026-08-09 01:24:01 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c3_family
+2026-08-09 01:24:01 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c3_family before init: []
+2026-08-09 01:24:01 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c3_family
+2026-08-09 01:24:01 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c3_family
+2026-08-09 01:24:01 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c3_family
+2026-08-09 01:24:03 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/controller/lib_esp32c3_family
+2026-08-09 01:24:03 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/controller/lib_esp32c3_family
+2026-08-09 01:24:03 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_phy
+2026-08-09 01:24:03 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_phy/lib
+2026-08-09 01:24:03 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_phy/lib before init: []
+2026-08-09 01:24:03 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_phy/lib
+2026-08-09 01:24:03 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_phy/lib
+2026-08-09 01:24:03 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_phy/lib
+2026-08-09 01:24:05 -  1 - 08 - INFO - ✓ Submodule complete: components/esp_phy/lib
+2026-08-09 01:24:05 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/esp_phy/lib
+2026-08-09 01:24:05 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread
+2026-08-09 01:24:05 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/lib
+2026-08-09 01:24:05 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/lib before init: []
+2026-08-09 01:24:05 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/lib
+2026-08-09 01:24:05 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/lib
+2026-08-09 01:24:05 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/openthread/lib
+2026-08-09 01:24:06 -  1 - 08 - INFO - ✓ Submodule complete: components/openthread/lib
+2026-08-09 01:24:06 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/openthread/lib
+2026-08-09 01:24:06 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32h2
+2026-08-09 01:24:06 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+2026-08-09 01:24:06 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32h2/esp32h2-bt-lib before init: []
+2026-08-09 01:24:06 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+2026-08-09 01:24:06 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+2026-08-09 01:24:06 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+2026-08-09 01:24:08 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+2026-08-09 01:24:08 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/controller/lib_esp32h2/esp32h2-bt-lib
+2026-08-09 01:24:08 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c2
+2026-08-09 01:24:08 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+2026-08-09 01:24:08 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c2/esp32c2-bt-lib before init: []
+2026-08-09 01:24:08 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+2026-08-09 01:24:08 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+2026-08-09 01:24:08 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+2026-08-09 01:24:10 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+2026-08-09 01:24:10 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/controller/lib_esp32c2/esp32c2-bt-lib
+2026-08-09 01:24:10 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c6
+2026-08-09 01:24:10 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+2026-08-09 01:24:10 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c6/esp32c6-bt-lib before init: []
+2026-08-09 01:24:10 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+2026-08-09 01:24:10 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+2026-08-09 01:24:10 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+2026-08-09 01:24:12 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+2026-08-09 01:24:12 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/controller/lib_esp32c6/esp32c6-bt-lib
+2026-08-09 01:24:12 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c5
+2026-08-09 01:24:12 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+2026-08-09 01:24:12 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c5/esp32c5-bt-lib before init: []
+2026-08-09 01:24:12 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+2026-08-09 01:24:12 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+2026-08-09 01:24:12 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+2026-08-09 01:24:14 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+2026-08-09 01:24:14 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/controller/lib_esp32c5/esp32c5-bt-lib
+2026-08-09 01:24:14 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/heap
+2026-08-09 01:24:14 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/heap/tlsf
+2026-08-09 01:24:14 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/heap/tlsf before init: []
+2026-08-09 01:24:14 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/heap/tlsf
+2026-08-09 01:24:14 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/heap/tlsf
+2026-08-09 01:24:14 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/heap/tlsf
+2026-08-09 01:24:15 -  1 - 08 - INFO - ✓ Submodule complete: components/heap/tlsf
+2026-08-09 01:24:15 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/heap/tlsf
+2026-08-09 01:24:15 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_coex
+2026-08-09 01:24:15 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_coex/lib
+2026-08-09 01:24:15 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_coex/lib before init: []
+2026-08-09 01:24:15 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_coex/lib
+2026-08-09 01:24:15 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_coex/lib
+2026-08-09 01:24:15 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/esp_coex/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - ✓ Submodule complete: components/esp_coex/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/esp_coex/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - Creating parent directories: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/esp_ble_mesh/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - Creating modules dir: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/esp_ble_mesh/lib/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - Contents of /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/esp_ble_mesh/lib/lib before init: []
+2026-08-09 01:24:16 -  1 - 08 - INFO - Initializing new git repo at /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/esp_ble_mesh/lib/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - Git dir is at: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/esp_ble_mesh/lib/lib
+2026-08-09 01:24:16 -  1 - 08 - INFO - ✓ Initialized modules repo: /home/yong/.espressif/v5.3.2/esp-idf/.git/modules/components/bt/esp_ble_mesh/lib/lib
+2026-08-09 01:24:18 -  1 - 08 - INFO - ✓ Submodule complete: components/bt/esp_ble_mesh/lib/lib
+2026-08-09 01:24:18 -  1 - 08 - INFO - IDF submodule correctly downloaded to:: components/bt/esp_ble_mesh/lib/lib
+2026-08-09 01:24:18 -  1 - 08 - INFO - Submodules updated successfully
+2026-08-09 01:24:18 -  1 - 08 - INFO - wizard.tools.filtering.selected_tools: xtensa-esp-elf-gdb, xtensa-esp-elf, esp-clang, riscv32-esp-elf, esp32ulp-elf, cmake, openocd-esp32, ninja, esp-rom-elfs
+2026-08-09 01:24:18 -  1 - 08 - INFO - Filtered to 10 tools based on user selection for v5.3.2
+2026-08-09 01:24:18 -  1 - 08 - INFO - Downloading tools to: "/home/yong/.espressif/dist"
+2026-08-09 01:24:18 -  1 - 08 - INFO - Tool cmake has multiple versions, using the recommended or the first one
+2026-08-09 01:24:18 -  1 - 08 - INFO - Tool 'xtensa-esp-elf' is not installed. Downloading...
+2026-08-09 01:24:24 -  1 - 08 - INFO - xtensa-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.xz successfully downloaded
+2026-08-09 01:24:25 -  1 - 08 - INFO - xtensa-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.xz verified
+2026-08-09 01:24:41 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:24:41 -  1 - 08 - INFO - Successfully extracted xtensa-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.xz to /home/yong/.espressif/tools/xtensa-esp-elf/esp-13.2.0_20240530
+2026-08-09 01:24:41 -  1 - 08 - INFO - Tool 'esp-clang' is not installed. Downloading...
+2026-08-09 01:25:04 -  1 - 08 - INFO - llvm-esp-16.0.0-20230516-linux-amd64.tar.xz successfully downloaded
+2026-08-09 01:25:05 -  1 - 08 - INFO - llvm-esp-16.0.0-20230516-linux-amd64.tar.xz verified
+2026-08-09 01:25:45 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:25:45 -  1 - 08 - INFO - Successfully extracted llvm-esp-16.0.0-20230516-linux-amd64.tar.xz to /home/yong/.espressif/tools/esp-clang/16.0.1-fe4f10a809
+2026-08-09 01:25:45 -  1 - 08 - INFO - Tool 'riscv32-esp-elf' is not installed. Downloading...
+2026-08-09 01:26:22 -  1 - 08 - INFO - riscv32-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.xz successfully downloaded
+2026-08-09 01:26:23 -  1 - 08 - INFO - riscv32-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.xz verified
+2026-08-09 01:26:50 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:26:50 -  1 - 08 - INFO - Successfully extracted riscv32-esp-elf-13.2.0_20240530-x86_64-linux-gnu.tar.xz to /home/yong/.espressif/tools/riscv32-esp-elf/esp-13.2.0_20240530
+2026-08-09 01:26:50 -  1 - 08 - INFO - Tool 'xtensa-esp-elf-gdb' is not installed. Downloading...
+2026-08-09 01:26:56 -  1 - 08 - INFO - xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz successfully downloaded
+2026-08-09 01:26:56 -  1 - 08 - INFO - xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz verified
+2026-08-09 01:26:57 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:26:57 -  1 - 08 - INFO - Successfully extracted xtensa-esp-elf-gdb-14.2_20240403-x86_64-linux-gnu.tar.gz to /home/yong/.espressif/tools/xtensa-esp-elf-gdb/14.2_20240403
+2026-08-09 01:26:57 -  1 - 08 - INFO - Tool 'esp32ulp-elf' is not installed. Downloading...
+2026-08-09 01:26:58 -  1 - 08 - INFO - esp32ulp-elf-2.38_20240113-linux-amd64.tar.gz successfully downloaded
+2026-08-09 01:26:59 -  1 - 08 - INFO - esp32ulp-elf-2.38_20240113-linux-amd64.tar.gz verified
+2026-08-09 01:26:59 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:26:59 -  1 - 08 - INFO - Successfully extracted esp32ulp-elf-2.38_20240113-linux-amd64.tar.gz to /home/yong/.espressif/tools/esp32ulp-elf/2.38_20240113
+2026-08-09 01:26:59 -  1 - 08 - WARN - Tool 'cmake' is installed with version '3.28.3', but expected '3.30.2'. Reinstalling...
+2026-08-09 01:27:03 -  1 - 08 - INFO - cmake-3.30.2-linux-x86_64.tar.gz successfully downloaded
+2026-08-09 01:27:03 -  1 - 08 - INFO - cmake-3.30.2-linux-x86_64.tar.gz verified
+2026-08-09 01:27:04 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:27:04 -  1 - 08 - INFO - Successfully extracted cmake-3.30.2-linux-x86_64.tar.gz to /home/yong/.espressif/tools/cmake/3.30.2
+2026-08-09 01:27:04 -  1 - 08 - INFO - Tool 'openocd-esp32' is not installed. Downloading...
+2026-08-09 01:27:06 -  1 - 08 - INFO - openocd-esp32-linux-amd64-0.12.0-esp32-20241016.tar.gz successfully downloaded
+2026-08-09 01:27:06 -  1 - 08 - INFO - openocd-esp32-linux-amd64-0.12.0-esp32-20241016.tar.gz verified
+2026-08-09 01:27:06 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:27:06 -  1 - 08 - INFO - Successfully extracted openocd-esp32-linux-amd64-0.12.0-esp32-20241016.tar.gz to /home/yong/.espressif/tools/openocd-esp32/v0.12.0-esp32-20241016
+2026-08-09 01:27:06 -  1 - 08 - INFO - Tool 'esp-rom-elfs' is not installed. Downloading...
+2026-08-09 01:27:07 -  1 - 08 - INFO - esp-rom-elfs-20240305.tar.gz successfully downloaded
+2026-08-09 01:27:07 -  1 - 08 - INFO - esp-rom-elfs-20240305.tar.gz verified
+2026-08-09 01:27:07 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:27:07 -  1 - 08 - INFO - Successfully extracted esp-rom-elfs-20240305.tar.gz to /home/yong/.espressif/tools/esp-rom-elfs/20240305
+2026-08-09 01:27:07 -  1 - 08 - INFO - Tool 'ninja' is not installed. Downloading...
+2026-08-09 01:27:08 -  1 - 08 - INFO - ninja-linux.zip successfully downloaded
+2026-08-09 01:27:08 -  1 - 08 - INFO - ninja-linux.zip verified
+2026-08-09 01:27:08 -  1 - 08 - INFO - Decompressing /home/yong/.espressif/dist/ninja-linux.zip to /home/yong/.espressif/tools/ninja/1.12.1
+2026-08-09 01:27:08 -  1 - 08 - INFO - Decompression completed successfully.
+2026-08-09 01:27:08 -  1 - 08 - INFO - Set executable permissions for ninja in /home/yong/.espressif/tools/ninja/1.12.1
+2026-08-09 01:27:08 -  1 - 08 - INFO - Successfully extracted ninja-linux.zip to /home/yong/.espressif/tools/ninja/1.12.1
+2026-08-09 01:27:08 -  1 - 08 - INFO - wizard.tools.downloaded: /home/yong/.espressif/v5.3.2/esp-idf/tools/tools.json
+2026-08-09 01:27:08 -  1 - 08 - INFO - tools installation artifacts cleaned up successfully: /home/yong/.espressif/dist
+2026-08-09 01:27:08 -  1 - 08 - INFO - Creating Python virtual environment at: /home/yong/.espressif/tools/python/v5.3.2/venv
+2026-08-09 01:27:13 -  1 - 08 - INFO - Downloading constraints file from https://dl.espressif.com/dl/esp-idf/espidf.constraints.v5.3.txt
+2026-08-09 01:27:13 -  1 - 08 - INFO - Downloaded constraints file to /home/yong/.espressif/tools/espidf.constraints.v5.3.txt
+2026-08-09 01:27:13 -  1 - 08 - INFO - Downloaded constraints file to /home/yong/.espressif/tools/espidf.constraints.v5.3.txt
+2026-08-09 01:27:13 -  1 - 08 - INFO - Downloaded constraints file: /home/yong/.espressif/tools/espidf.constraints.v5.3.txt
+2026-08-09 01:27:56 -  1 - 08 - INFO - Python environment installed successfully
+2026-08-09 01:27:56 -  1 - 08 - INFO - Python environment installed
+2026-08-09 01:27:56 -  1 - 08 - INFO - ELF ROM directory found: /home/yong/.espressif/tools/esp-rom-elfs/20240305
+2026-08-09 01:27:56 -  1 - 08 - INFO - Activation shell script created successfully
+2026-08-09 01:27:56 -  1 - 08 - ERROR - Failed to copy OpenOCD rules: Failed to copy /home/yong/.espressif/tools/openocd-esp32/v0.12.0-esp32-20241016/openocd-esp32/share/openocd/contrib/60-openocd.rules to /etc/udev/rules.d/60-openocd.rules . Make sure you have the necessary permissions. Now you can copy it manually.
+
+Caused by:
+    Permission denied (os error 13)
+Configuration saved successfully to config.toml
+You have successfully installed ESP-IDF
+for using the ESP-IDF tools inside the terminal, you will find activation scripts inside the base install folder
+sourcing the activation script will setup environment in the current terminal session
+============================================
+to activate the environment, run the following command in your terminal:
+       source "/home/yong/.espressif/tools/activate_idf_v5.3.2.sh"
+============================================
+2026-08-09 01:27:56 -  1 - 08 - INFO - Wizard result: Ok
+2026-08-09 01:27:56 -  1 - 08 - INFO - Successfully installed IDF
+2026-08-09 01:27:56 -  1 - 08 - INFO - Now you can start using IDF tools

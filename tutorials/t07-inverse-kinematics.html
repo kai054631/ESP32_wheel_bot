@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>T7 — drive(v, ω): Inverse Kinematics</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1d212b;
+    --border: #2a2f3a;
+    --text: #e6e8ec;
+    --muted: #9aa3b2;
+    --accent: #5fb3ff;
+    --accent-2: #7ee0b3;
+    --warn: #ffb15f;
+    --bad: #ff8080;
+    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); margin: 0; padding: 0 0 4rem; line-height: 1.55; }
+  header {
+    padding: 2.2rem 2rem 1.4rem;
+    border-bottom: 1px solid var(--border);
+    background: linear-gradient(180deg, #151822, #0f1115);
+  }
+  header .kicker { color: var(--accent); font-size: 0.85rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
+  header h1 { margin: 0.3rem 0 0.4rem; font-size: 1.5rem; }
+  header .sub { color: var(--muted); font-size: 0.92rem; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 2rem; }
+  .meta-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+  .pill {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 999px;
+    padding: 0.3rem 0.8rem; font-size: 0.82rem; color: var(--muted);
+  }
+  .pill b { color: var(--text); }
+  section { margin-top: 2rem; }
+  h2 { font-size: 1.05rem; border-left: 3px solid var(--accent); padding-left: 0.6rem; margin-bottom: 0.9rem; }
+  h3 { font-size: 0.95rem; color: var(--accent-2); margin: 1.1rem 0 0.5rem; }
+  .card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1.2rem 1.4rem;
+  }
+  .card + .card { margin-top: 1rem; }
+  ol.steps, ul.list { padding-left: 1.3rem; }
+  ol.steps li, ul.list li { margin-bottom: 0.7rem; }
+  code, .mono {
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    background: var(--panel-2); padding: 0.1rem 0.4rem; border-radius: 5px;
+    font-size: 0.88em; color: var(--accent-2);
+  }
+  pre {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 0.9rem 1rem; overflow-x: auto; font-size: 0.85rem;
+  }
+  a { color: var(--accent); }
+  .note {
+    background: rgba(255,177,95,0.08); border: 1px solid rgba(255,177,95,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.8rem;
+  }
+  .note b { color: var(--warn); }
+  .checkpoint {
+    background: rgba(126,224,179,0.08); border: 1px solid rgba(126,224,179,0.3);
+    border-radius: 8px; padding: 0.8rem 1rem; font-size: 0.9rem; margin-top: 0.6rem;
+  }
+  .checkpoint b { color: var(--accent-2); }
+  table { border-collapse: collapse; width: 100%; margin-top: 0.6rem; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 0.45rem 0.7rem; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .blank {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.4em; height: 1.4em; border-radius: 50%;
+    background: var(--accent); color: #0a1a12; font-weight: 700; font-size: 0.78em;
+  }
+  details {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    padding: 1rem 1.4rem; margin-top: 0.8rem;
+  }
+  summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+  details[open] summary { margin-bottom: 0.8rem; }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 3rem; }
+  footer a { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <div class="kicker">Tutorial 7 of 8 — Drive-first track</div>
+    <h1>drive(v, ω): Inverse Kinematics</h1>
+    <div class="sub">Turn a single command — go this fast, turn this hard — into the two independent wheel speeds that produce it.</div>
+    <div class="meta-row">
+      <div class="pill">⏱ <b>75–90 min</b></div>
+      <div class="pill">🎯 Goal: <b>forward, reverse, pivot, and arc on command</b></div>
+      <div class="pill">📍 builds on motorMove()</div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <section>
+    <h2>What you're building</h2>
+    <div class="card">
+      <p>Right now you can command each wheel individually with <code>motorMove(mot, value)</code>.
+      What you actually want to command is the <i>robot</i>: "drive forward at this speed" or
+      "turn on the spot at this rate." <code>drive(v, ω)</code> is the function that translates
+      between those two — a robot-level command in, two wheel-level <code>motorMove</code> calls
+      out.</p>
+      <pre>drive(v, ω)  ──►  v_left, v_right  ──►  motorMove(A, ...) + motorMove(B, ...)</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Concepts, explained inline</h2>
+    <div class="card">
+      <h3>The two numbers that describe any 2D robot motion</h3>
+      <table>
+        <tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr>
+        <tr><td><code>v</code></td><td>forward/backward speed of the robot's centre</td><td>m/s</td></tr>
+        <tr><td><code>ω</code></td><td>rotation rate; positive = counter-clockwise</td><td>rad/s</td></tr>
+      </table>
+      <p><code>v = 0.2, ω = 0</code> is "drive straight at 0.2 m/s." <code>v = 0, ω = 1</code> is
+      "spin in place." Anything in between is an arc. This <code>(v, ω)</code> pair is the
+      standard way robotics describes 2D motion — it's what you'd publish on a ROS
+      <code>/cmd_vel</code> topic, for instance.</p>
+
+      <h3>Deriving the wheel speeds</h3>
+      <p>Picture the robot rotating about some point on the line through both wheels — the
+      "instantaneous centre of rotation." If the two wheels are a track width <code>b</code>
+      apart and the robot's centre is moving at <code>v</code> while rotating at <code>ω</code>,
+      the inside wheel must travel slower than the centre and the outside wheel faster, by an
+      amount proportional to how far each is from the centre — <code>b/2</code>:</p>
+      <pre>       ω  (turning left = positive)
+       ↺
+  ┌────┼────┐
+  │    │    │
+ L●----●----●R      track width b
+  └────┴────┘
+       v  (centre speed)
+
+  v_left  = v − ω·(b/2)
+  v_right = v + ω·(b/2)</pre>
+      <p>Check it against intuition: pivoting in place is <code>v = 0</code>, so
+      <code>v_left = −ω·b/2</code> and <code>v_right = +ω·b/2</code> — equal and opposite, which
+      is exactly a spin-in-place. Driving straight is <code>ω = 0</code>, giving
+      <code>v_left = v_right = v</code>, as it should.</p>
+
+      <h3>Measure your track width</h3>
+      <p><code>b</code> isn't a nominal chassis spec — measure the actual centre-to-centre
+      distance between your two wheels' contact points on the ground.</p>
+
+      <h3>This mapping is open-loop — say why that matters</h3>
+      <p>You don't have closed-loop speed control yet (that's T8). So "wheel speed" here really
+      means "a duty proportional to speed," not a guaranteed physical speed — two motors driven
+      at the same duty will not turn at exactly the same real speed, because no two small DC
+      motors are identical. That's fine for this tutorial; the goal is correct <i>direction and
+      shape</i> of motion (forward, pivot, arc), not perfect straight-line tracking. You'll
+      measure exactly how far off straight it drifts, and that number becomes T8's reason to exist.</p>
+
+      <h3>Saturation: clip both wheels together, or ruin the turn</h3>
+      <div class="note"><b>This is a real task, not a footnote.</b> Suppose max wheel speed is
+      1.0 and your kinematics computes <code>v_left = 0.6</code>, <code>v_right = 1.3</code>.
+      Clamping only <code>v_right</code> down to 1.0 seems harmless — but it silently changes the
+      <i>difference</i> between the two wheel speeds, which is what encodes <code>ω</code>. The
+      robot now turns less sharply than commanded, with no warning. The correct fix: if either
+      wheel exceeds the limit, scale <b>both</b> wheel speeds down by the same factor, so their
+      ratio — and therefore the turn radius — is preserved.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Your hardware</h2>
+    <div class="card">
+      <p>No new pins — this layers on top of <code>motorMove(mot, value)</code> from your existing
+      driver code, which already takes a signed ±100 value per motor.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Code skeleton</h2>
+    <div class="card">
+      <pre>#define TRACK_WIDTH_M   <span class="blank">1</span>   // measured, metres
+#define MAX_WHEEL_MPS   <span class="blank">2</span>   // measured or estimated top speed
+
+void drive(float v, float omega)
+{
+    float v_left  = <span class="blank">3</span>;
+    float v_right = <span class="blank">4</span>;
+
+    float max_mag = <span class="blank">5</span>;   // largest |wheel speed| of the two
+    if (max_mag > MAX_WHEEL_MPS) {
+        float scale = <span class="blank">6</span>;
+        v_left  *= scale;
+        v_right *= scale;
+    }
+
+    int duty_left  = <span class="blank">7</span>;   // v_left  → motorMove's ±100 range
+    int duty_right = <span class="blank">7</span>;   // v_right → motorMove's ±100 range
+
+    motorMove(MOTOR_A, duty_left);
+    motorMove(MOTOR_B, duty_right);
+}</pre>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fill-in table</h2>
+    <div class="card">
+      <table>
+        <tr><th>Blank</th><th>What it does</th><th>Where to find it</th><th>Your answer</th></tr>
+        <tr><td><span class="blank">1</span></td><td>Distance between wheel contact points</td><td>tape measure, your chassis</td><td></td></tr>
+        <tr><td><span class="blank">2</span></td><td>Top wheel speed the mapping should treat as 100% duty</td><td>from T6's speed measurement at full duty, or a reasonable estimate</td><td></td></tr>
+        <tr><td><span class="blank">3</span></td><td>Left wheel speed formula</td><td>the derivation above</td><td></td></tr>
+        <tr><td><span class="blank">4</span></td><td>Right wheel speed formula</td><td>the derivation above</td><td></td></tr>
+        <tr><td><span class="blank">5</span></td><td>The larger of <code>|v_left|</code> and <code>|v_right|</code></td><td>standard two-value max, applied to absolute values</td><td></td></tr>
+        <tr><td><span class="blank">6</span></td><td>Factor that brings the larger one exactly to the limit</td><td>ratio of the limit to the value that exceeded it</td><td></td></tr>
+        <tr><td><span class="blank">7</span></td><td>Convert a speed in m/s to <code>motorMove</code>'s ±100 duty scale</td><td>you defined <code>MAX_WHEEL_MPS</code> above — what duty should that map to?</td><td></td></tr>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Checkpoints</h2>
+    <div class="checkpoint">
+      <b>You're done when:</b> <code>drive(0.2, 0)</code> drives straight forward,
+      <code>drive(-0.2, 0)</code> straight back, <code>drive(0, 1.0)</code> pivots in place
+      without net translation, and a nonzero <code>v</code> with nonzero <code>ω</code> traces a
+      visible arc. Then: mark a start line, run <code>drive(v, 0)</code> for a measured 2 m of
+      travel, and record how far off a straight line the robot ends up — write this number down,
+      it's T8's baseline to beat.
+    </div>
+  </section>
+
+  <section>
+    <h2>Common failure modes</h2>
+    <div class="card">
+      <ul class="list">
+        <li><b>Robot pivots the wrong way for positive ω.</b> Sign convention mismatch between
+          your formula and which motor is "left" — recheck against the diagram, and against
+          <code>motorMove</code>'s own forward/backward polarity per motor.</li>
+        <li><b>Straight drive() curves noticeably even with ω = 0.</b> Expected to some degree —
+          this is exactly the drift T8 will fix. Large curving (much more than the two wheels'
+          natural mismatch) suggests a units or scaling bug instead — check duty conversion.</li>
+        <li><b>Pivot has visible net translation.</b> <code>v_left</code> and <code>v_right</code>
+          aren't coming out as exact opposites — check the track-width term is applied identically
+          to both, just with opposite sign.</li>
+        <li><b>Large ω silently produces a gentler turn than expected.</b> This is the un-clipped
+          saturation bug — check both wheels are scaled together, not clamped independently.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <details>
+      <summary>Answer key — open only after you've attempted it</summary>
+      <pre>float v_left  = v - omega * (TRACK_WIDTH_M / 2.0f);
+float v_right = v + omega * (TRACK_WIDTH_M / 2.0f);
+
+float max_mag = fmaxf(fabsf(v_left), fabsf(v_right));
+if (max_mag > MAX_WHEEL_MPS) {
+    float scale = MAX_WHEEL_MPS / max_mag;
+    v_left  *= scale;
+    v_right *= scale;
+}
+
+int duty_left  = (int)((v_left  / MAX_WHEEL_MPS) * 100.0f);
+int duty_right = (int)((v_right / MAX_WHEEL_MPS) * 100.0f);</pre>
+      <p>Note <code>duty_left</code>/<code>duty_right</code> can still exceed ±100 by a rounding
+      hair after the scale step — <code>motorMove</code>'s own clamp (from the earlier fixes) is
+      the safety net here, not a substitute for doing the scaling correctly.</p>
+    </details>
+  </section>
+
+</div>
+
+<footer>Tutorial 7 of 8 · <a href="../guide.html">back to course guide</a></footer>
+
+</body>
+</html>
