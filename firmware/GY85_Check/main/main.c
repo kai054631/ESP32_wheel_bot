@@ -54,6 +54,25 @@ static esp_err_t read_regs(uint8_t dev_addr, uint8_t reg, uint8_t *out, size_t l
     return err;
 }
 
+// Same one-shot pattern, for a single register write (reg addr + 1 data byte).
+static esp_err_t write_reg(uint8_t dev_addr, uint8_t reg, uint8_t val)
+{
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = dev_addr,
+        .scl_speed_hz = I2C_FREQ_HZ,
+    };
+    i2c_master_dev_handle_t dev_handle;
+    esp_err_t err = i2c_master_bus_add_device(bus_handle, &dev_cfg, &dev_handle);
+    if (err != ESP_OK) return err;
+
+    uint8_t buf[2] = { reg, val };
+    err = i2c_master_transmit(dev_handle, buf, 2, 100);
+
+    i2c_master_bus_rm_device(dev_handle);
+    return err;
+}
+
 static void scan_bus(void)
 {
     ESP_LOGI(TAG, "Scanning I2C bus (SDA=%d SCL=%d)...", I2C_SDA_GPIO, I2C_SCL_GPIO);
@@ -132,7 +151,75 @@ void app_main(void)
         }
     }
 
-    ESP_LOGI(TAG, "Check complete.");
+    ESP_LOGI(TAG, "Identification check complete.");
+
+    // ---------------------------------------------------------------
+    // Live-data check: identification alone only proves the chip is
+    // present and genuine. It does NOT prove it's actually producing
+    // fresh measurements. Enable each sensor's measurement mode and
+    // read a few real samples so we can see the numbers move.
+    // ---------------------------------------------------------------
+
+    // ADXL345: POWER_CTL (0x2D) bit3 = Measure. Powers up the sensor into
+    // active measurement mode (it resets into standby).
+    write_reg(ADXL345_ADDR, 0x2D, 0x08);
+
+    // ITG3200: DLPF_FS (0x16) — FS_SEL bits[4:3] MUST be 0b11 per the
+    // datasheet for normal operation, regardless of filter settings.
+    // 0x18 = FS_SEL=3, DLPF_CFG=0 (256Hz low-pass, 8kHz internal sample rate).
+    write_reg(ITG3200_ADDR, 0x16, 0x18);
+
+    // QMC5883L (clone at 0x0D): SET/RESET period (0x0B) recommended = 0x01,
+    // then Control Register 1 (0x09) = OSR 512 | RNG 8G | ODR 200Hz | continuous mode.
+    write_reg(0x0D, 0x0B, 0x01);
+    write_reg(0x0D, 0x09, 0x1D);
+
+    vTaskDelay(pdMS_TO_TICKS(50));
+
+    ESP_LOGI(TAG, "Sampling live data (5 samples, 200ms apart)...");
+    for (int i = 0; i < 5; i++) {
+        // --- ADXL345 accel: DATAX0..DATAZ1, 0x32-0x37, 6 bytes, little-endian, signed ---
+        uint8_t abuf[6];
+        if (read_regs(ADXL345_ADDR, 0x32, abuf, 6) == ESP_OK) {
+            int16_t ax = (int16_t)(abuf[1] << 8 | abuf[0]);
+            int16_t ay = (int16_t)(abuf[3] << 8 | abuf[2]);
+            int16_t az = (int16_t)(abuf[5] << 8 | abuf[4]);
+            ESP_LOGI(TAG, "  ADXL345 accel raw: X=%6d Y=%6d Z=%6d", ax, ay, az);
+        } else {
+            ESP_LOGW(TAG, "  ADXL345 read failed");
+        }
+
+        // --- ITG3200 gyro: GYRO_XOUT_H.._ZOUT_L, 0x1D-0x22, 6 bytes, big-endian, signed ---
+        uint8_t gbuf[6];
+        if (read_regs(ITG3200_ADDR, 0x1D, gbuf, 6) == ESP_OK) {
+            int16_t gx = (int16_t)(gbuf[0] << 8 | gbuf[1]);
+            int16_t gy = (int16_t)(gbuf[2] << 8 | gbuf[3]);
+            int16_t gz = (int16_t)(gbuf[4] << 8 | gbuf[5]);
+            ESP_LOGI(TAG, "  ITG3200  gyro raw: X=%6d Y=%6d Z=%6d", gx, gy, gz);
+        } else {
+            ESP_LOGW(TAG, "  ITG3200 read failed");
+        }
+
+        // --- QMC5883L mag: wait for DRDY (status reg 0x06 bit0), then X/Y/Z, 0x00-0x05 ---
+        uint8_t status = 0;
+        if (read_regs(0x0D, 0x06, &status, 1) == ESP_OK && (status & 0x01)) {
+            uint8_t mbuf[6];
+            if (read_regs(0x0D, 0x00, mbuf, 6) == ESP_OK) {
+                int16_t mx = (int16_t)(mbuf[1] << 8 | mbuf[0]);
+                int16_t my = (int16_t)(mbuf[3] << 8 | mbuf[2]);
+                int16_t mz = (int16_t)(mbuf[5] << 8 | mbuf[4]);
+                ESP_LOGI(TAG, "  QMC5883L  mag raw: X=%6d Y=%6d Z=%6d", mx, my, mz);
+            } else {
+                ESP_LOGW(TAG, "  QMC5883L data read failed");
+            }
+        } else {
+            ESP_LOGW(TAG, "  QMC5883L not ready (status=0x%02X)", status);
+        }
+
+        vTaskDelay(pdMS_TO_TICKS(200));
+    }
+
+    ESP_LOGI(TAG, "Live-data check complete.");
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
