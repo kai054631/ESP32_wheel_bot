@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "driver/ledc.h"
@@ -9,17 +10,20 @@
 
 void motorMove(int mot, int value);
 
-#define PWMA 4 // motor A pwm pin
-#define AIN2 5 // motor A phase change 2
-#define AIN1 6 // motor A phase change 1
+// DRV8833: no separate PWM pin per channel — PWM goes directly onto the
+// two IN pins themselves (AIN1/AIN2 for motor A, BIN1/BIN2 for motor B).
+// PWMA/PWMB from the old TB6612 wiring are gone; nothing drives GPIO4/17
+// anymore.
+#define AIN2 5 // motor A input 2 (PWM)
+#define AIN1 6 // motor A input 1 (PWM)
 
-#define STBY 7 // standby pin for tb6612fng, high to run motor
+#define STBY 7 // DRV8833 nSLEEP — high to wake the driver (same pin as before)
 
-#define BIN1 15 // motor B phase change 1
-#define BIN2 16 // motor B phase change 2
-#define PWMB 17 // motor B pwm pin
+#define BIN1 15 // motor B input 1 (PWM)
+#define BIN2 16 // motor B input 2 (PWM)
 
-#define GND 18
+// GPIO18 fake-"GND" is gone — pins.txt already records the wire moved to a
+// real GND pin on the board; the code just never caught up until now.
 
 #define enAA 8 // motor A phase A encoder
 #define enAB 3 // motor A phase B encoder
@@ -33,8 +37,12 @@ void motorMove(int mot, int value);
 #define MOTOR_B 0
 #define MOTOR_A 1
 
-#define PWMB_CHANNEL LEDC_CHANNEL_0
-#define PWMA_CHANNEL LEDC_CHANNEL_1
+// One LEDC channel per input pin — DRV8833 needs 4 independent PWM
+// channels (AIN1, AIN2, BIN1, BIN2), not 2 PWM + 4 plain-GPIO direction pins.
+#define AIN1_CHANNEL LEDC_CHANNEL_0
+#define AIN2_CHANNEL LEDC_CHANNEL_1
+#define BIN1_CHANNEL LEDC_CHANNEL_2
+#define BIN2_CHANNEL LEDC_CHANNEL_3
 #define PWM_TIMER LEDC_TIMER_0
 #define PWM_MODE LEDC_LOW_SPEED_MODE
 #define PWM_DUTY_RES LEDC_TIMER_10_BIT // 10-bit resolution (0-1023)
@@ -94,74 +102,57 @@ void encoders_init(){
 
 
 
+// Drive one LEDC channel's duty, zeroing the other channel on the same
+// H-bridge half. DRV8833 direction is set by *which* input pin carries the
+// PWM — the other pin is held low (coast-decay drive: 0/PWM, not PWM/PWM).
+static void set_half_bridge(ledc_channel_t drive_chan, ledc_channel_t idle_chan, int duty)
+{
+     ledc_set_duty(PWM_MODE, idle_chan, 0);
+     ledc_update_duty(PWM_MODE, idle_chan);
+     ledc_set_duty(PWM_MODE, drive_chan, duty);
+     ledc_update_duty(PWM_MODE, drive_chan);
+}
+
 void motorMove(int mot, int value)
 {
-     if (mot == 0)//MOTOR B
+     if (value > 100) value = 100;
+     if (value < -100) value = -100;
+     int duty = (abs(value) * 1023) / 100;
+
+     if (mot == MOTOR_B)
      {
-          gpio_set_level(GND, 0);  // pull low to create gnd for driver
-          gpio_set_level(STBY, 1); // put high to enable the driver
-          if(value>100){
-               value=100;
-          }
-          if (value > 0) //FORWARD
+          if (value > 0) //FORWARD: PWM on BIN1, BIN2 held low
           {
-               int duty = value*10.23;
-               gpio_set_level(BIN1, 1);
-               gpio_set_level(BIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMB_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMB_CHANNEL);
+               set_half_bridge(BIN1_CHANNEL, BIN2_CHANNEL, duty);
                printf(" duty cycle B : %d\n", duty);
           }
-          else if (value < 0) //BACKWARD
+          else if (value < 0) //BACKWARD: PWM on BIN2, BIN1 held low
           {
-               int duty = -value*10.23;
-               gpio_set_level(BIN1, 0);
-               gpio_set_level(BIN2, 1);
-               ledc_set_duty(PWM_MODE, PWMB_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMB_CHANNEL);
+               set_half_bridge(BIN2_CHANNEL, BIN1_CHANNEL, duty);
                printf(" duty cycle B : -%d\n", duty);
           }
-          else //STOP
+          else //STOP (coast — both inputs low)
           {
-               gpio_set_level(BIN1, 0);
-               gpio_set_level(BIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMB_CHANNEL, 0);
-               ledc_update_duty(PWM_MODE, PWMB_CHANNEL);
+               set_half_bridge(BIN1_CHANNEL, BIN2_CHANNEL, 0);
                printf(" Motor B Stop\n");
           }
           return;
      }
-     else if (mot == 1) //MOTOR A DRIVE
+     else if (mot == MOTOR_A)
      {
-          // gpio_set_level(GND, 0);  // pull low to create gnd for driver
-          // gpio_set_level(STBY, 1); // put high to enable the driver
-          if(value>100){
-               value=100;
-          }
-          if (value > 0)      //FORWARD
+          if (value > 0)      //FORWARD: PWM on AIN1, AIN2 held low
           {
-               int duty = value*10.23;
-               gpio_set_level(AIN1, 1);
-               gpio_set_level(AIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMA_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMA_CHANNEL);
+               set_half_bridge(AIN1_CHANNEL, AIN2_CHANNEL, duty);
                printf(" duty cycle A : %d\n", duty);
           }
-          else if (value < 0) //BACKWARD
+          else if (value < 0) //BACKWARD: PWM on AIN2, AIN1 held low
           {
-               int duty =-value*10.23;
-               gpio_set_level(AIN1, 0);
-               gpio_set_level(AIN2, 1);
-               ledc_set_duty(PWM_MODE, PWMA_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMA_CHANNEL);
+               set_half_bridge(AIN2_CHANNEL, AIN1_CHANNEL, duty);
                printf(" duty cycle A : -%d\n", duty);
           }
-          else //STOP
+          else //STOP (coast — both inputs low)
           {
-               gpio_set_level(AIN1, 0);
-               gpio_set_level(AIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMA_CHANNEL, 0);
-               ledc_update_duty(PWM_MODE, PWMA_CHANNEL);
+               set_half_bridge(AIN1_CHANNEL, AIN2_CHANNEL, 0);
                printf(" Motor A Stop\n");
           }
           return;
@@ -169,78 +160,82 @@ void motorMove(int mot, int value)
 }
 void app_main(void)
 {
-     // UNIVERSAL PIN CONFIG
+     // STBY (DRV8833 nSLEEP) is the only plain GPIO left — AIN1/AIN2/BIN1/BIN2
+     // are claimed directly by LEDC below, not gpio_config'd here. Configuring
+     // them as plain outputs too would be redundant: LEDC's GPIO-matrix
+     // routing wins over gpio_config on the same pin anyway.
      gpio_config_t driver_conf = {
-         .pin_bit_mask = (1ULL << STBY) | (1ULL << GND),
+         .pin_bit_mask = (1ULL << STBY),
          .mode = GPIO_MODE_OUTPUT,
          .pull_up_en = GPIO_PULLUP_DISABLE,
          .pull_down_en = GPIO_PULLDOWN_DISABLE,
          .intr_type = GPIO_INTR_DISABLE};
      gpio_config(&driver_conf);
 
-     // MOTOR B PIN CONFIG
-     gpio_config_t driverB_conf = {
-         .pin_bit_mask = (1ULL << BIN1) | (1ULL << BIN2),
-         .mode = GPIO_MODE_OUTPUT,
-         .pull_up_en = GPIO_PULLUP_DISABLE,
-         .pull_down_en = GPIO_PULLDOWN_DISABLE,
-         .intr_type = GPIO_INTR_DISABLE};
-     gpio_config(&driverB_conf);
-
-     // MOTOR A PIN CONFIG
-     gpio_config_t driverA_conf = {
-         .pin_bit_mask = (1ULL << AIN1) | (1ULL << AIN2),
-         .mode = GPIO_MODE_OUTPUT,
-         .pull_up_en = GPIO_PULLUP_DISABLE,
-         .pull_down_en = GPIO_PULLDOWN_DISABLE,
-         .intr_type = GPIO_INTR_DISABLE};
-     gpio_config(&driverA_conf);
-
-     // TIMER CONFIG FOR MOTOR PWM
+     // TIMER CONFIG FOR MOTOR PWM — shared by all 4 channels
      ledc_timer_config_t motor_timer = {
          .speed_mode = PWM_MODE,
          .duty_resolution = PWM_DUTY_RES,
          .timer_num = PWM_TIMER,
          .freq_hz = PWM_FREQUENCY};
-     // ledc_timer_config(&motor_timer);
      ESP_ERROR_CHECK(ledc_timer_config(&motor_timer));
-     // PWM CHANNEL CONFIG FOR MOTOR B
-     ledc_channel_config_t motorB_channel = {
-         .gpio_num = PWMB,
-         .speed_mode = PWM_MODE,
-         .channel = PWMB_CHANNEL,
-         .timer_sel = PWM_TIMER,
-         .duty = 0};
-     // ledc_channel_config(&motorB_channel);
-     ESP_ERROR_CHECK(ledc_channel_config(&motorB_channel));
 
-     // PWM CHANNEL CONFIG FOR MOTOR A
-     ledc_channel_config_t motorA_channel = {
-         .gpio_num = PWMA,
-         .speed_mode = PWM_MODE,
-         .channel = PWMA_CHANNEL,
-         .timer_sel = PWM_TIMER,
-         .duty = 0};
-     // ledc_channel_config(&motorA_channel);
-     ESP_ERROR_CHECK(ledc_channel_config(&motorA_channel));
+     // One LEDC channel per DRV8833 input pin, all sharing PWM_TIMER.
+     ledc_channel_config_t ain1_channel = {
+         .gpio_num = AIN1, .speed_mode = PWM_MODE,
+         .channel = AIN1_CHANNEL, .timer_sel = PWM_TIMER, .duty = 0};
+     ESP_ERROR_CHECK(ledc_channel_config(&ain1_channel));
 
-     gpio_set_level(GND, 0);  // pull low to create gnd for driver
-     gpio_set_level(STBY, 1); // put high to enable the driver
+     ledc_channel_config_t ain2_channel = {
+         .gpio_num = AIN2, .speed_mode = PWM_MODE,
+         .channel = AIN2_CHANNEL, .timer_sel = PWM_TIMER, .duty = 0};
+     ESP_ERROR_CHECK(ledc_channel_config(&ain2_channel));
+
+     ledc_channel_config_t bin1_channel = {
+         .gpio_num = BIN1, .speed_mode = PWM_MODE,
+         .channel = BIN1_CHANNEL, .timer_sel = PWM_TIMER, .duty = 0};
+     ESP_ERROR_CHECK(ledc_channel_config(&bin1_channel));
+
+     ledc_channel_config_t bin2_channel = {
+         .gpio_num = BIN2, .speed_mode = PWM_MODE,
+         .channel = BIN2_CHANNEL, .timer_sel = PWM_TIMER, .duty = 0};
+     ESP_ERROR_CHECK(ledc_channel_config(&bin2_channel));
+
+     gpio_set_level(STBY, 1); // wake the DRV8833 (nSLEEP high)
      encoders_init();
-     int countA=0;
-     int countB=0;
+     int countA = 0;
+     int countB = 0;
+
+     // DRV8833 bring-up sequence: each motor, both directions, with a stop
+     // in between so you can see each transition cleanly on the bench.
      while (1)
      {
-          // ESP_ERROR_CHECK(pcnt_unit_get_count(unitA,&countA));
-          // ESP_ERROR_CHECK(pcnt_unit_get_count(unitB,&countB));
-          // printf("MOTOR A : %d    MOTOR B : %d\n",countA,countB);
-          // vTaskDelay(200/portTICK_PERIOD_MS);
+          printf("== MOTOR A forward ==\n");
+          motorMove(MOTOR_A, 30);
+          vTaskDelay(pdMS_TO_TICKS(2000));
+          motorMove(MOTOR_A, 0);
+          vTaskDelay(pdMS_TO_TICKS(1000));
 
-          // motorMove(MOTOR_B, 80);
-          motorMove(MOTOR_A, 20);
-          vTaskDelay(3000 / portTICK_PERIOD_MS);
-          // motorMove(MOTOR_B, 0);
-          // motorMove(MOTOR_A, 0);
-          vTaskDelay(1000 / portTICK_PERIOD_MS);
+          printf("== MOTOR A backward ==\n");
+          motorMove(MOTOR_A, -30);
+          vTaskDelay(pdMS_TO_TICKS(2000));
+          motorMove(MOTOR_A, 0);
+          vTaskDelay(pdMS_TO_TICKS(1000));
+
+          printf("== MOTOR B forward ==\n");
+          motorMove(MOTOR_B, 30);
+          vTaskDelay(pdMS_TO_TICKS(2000));
+          motorMove(MOTOR_B, 0);
+          vTaskDelay(pdMS_TO_TICKS(1000));
+
+          printf("== MOTOR B backward ==\n");
+          motorMove(MOTOR_B, -30);
+          vTaskDelay(pdMS_TO_TICKS(2000));
+          motorMove(MOTOR_B, 0);
+          vTaskDelay(pdMS_TO_TICKS(1000));
+
+          ESP_ERROR_CHECK(pcnt_unit_get_count(unitA, &countA));
+          ESP_ERROR_CHECK(pcnt_unit_get_count(unitB, &countB));
+          printf("encoder counts -> A: %d   B: %d\n", countA, countB);
      }
 }
