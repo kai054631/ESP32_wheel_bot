@@ -18,6 +18,8 @@
 #include "driver/pulse_cnt.h"
 #include "driver/i2c_master.h"
 #include "esp_adc/adc_oneshot.h"
+#include "esp_adc/adc_cali.h"
+#include "esp_adc/adc_cali_scheme.h"
 #include "esp_log.h"
 
 static const char *TAG = "PinTest";
@@ -185,6 +187,22 @@ static esp_err_t read_regs(uint8_t dev_addr, uint8_t reg, uint8_t *out, size_t l
     return err;
 }
 
+static esp_err_t write_reg(uint8_t dev_addr, uint8_t reg, uint8_t val)
+{
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = dev_addr,
+        .scl_speed_hz = I2C_FREQ_HZ,
+    };
+    i2c_master_dev_handle_t dev_handle;
+    esp_err_t err = i2c_master_bus_add_device(i2c_bus, &dev_cfg, &dev_handle);
+    if (err != ESP_OK) return err;
+    uint8_t buf[2] = {reg, val};
+    err = i2c_master_transmit(dev_handle, buf, 2, 100);
+    i2c_master_bus_rm_device(dev_handle);
+    return err;
+}
+
 static void gy85_init_and_identify(void)
 {
     i2c_master_bus_config_t bus_cfg = {
@@ -232,12 +250,59 @@ static void gy85_init_and_identify(void)
         ESP_LOGW(TAG, "HMC5883L silent but 0x0D acked -> likely a QMC5883L clone");
     else
         ESP_LOGW(TAG, "HMC5883L did not respond, 0x0D silent too -> mag not wired/powered");
+
+    // Wake each chip into active measurement mode (they reset into standby/idle).
+    write_reg(ADXL345_ADDR, 0x2D, 0x08); // POWER_CTL: Measure bit
+    write_reg(ITG3200_ADDR, 0x16, 0x18); // DLPF_FS: FS_SEL=3 (required), DLPF_CFG=0
+    write_reg(0x0D, 0x0B, 0x01);         // QMC5883L clone: SET/RESET period
+    write_reg(0x0D, 0x09, 0x1D);         // QMC5883L clone: OSR512/8G/200Hz/continuous
+    vTaskDelay(pdMS_TO_TICKS(50));
+}
+
+// Live sample: accel (ADXL345), gyro (ITG3200), mag (QMC5883L clone at 0x0D).
+static void gy85_read_and_log(void)
+{
+    uint8_t abuf[6];
+    if (read_regs(ADXL345_ADDR, 0x32, abuf, 6) == ESP_OK) {
+        int16_t ax = (int16_t)(abuf[1] << 8 | abuf[0]);
+        int16_t ay = (int16_t)(abuf[3] << 8 | abuf[2]);
+        int16_t az = (int16_t)(abuf[5] << 8 | abuf[4]);
+        ESP_LOGI(TAG, "  accel raw: X=%6d Y=%6d Z=%6d", ax, ay, az);
+    } else {
+        ESP_LOGW(TAG, "  accel read failed");
+    }
+
+    uint8_t gbuf[6];
+    if (read_regs(ITG3200_ADDR, 0x1D, gbuf, 6) == ESP_OK) {
+        int16_t gx = (int16_t)(gbuf[0] << 8 | gbuf[1]);
+        int16_t gy = (int16_t)(gbuf[2] << 8 | gbuf[3]);
+        int16_t gz = (int16_t)(gbuf[4] << 8 | gbuf[5]);
+        ESP_LOGI(TAG, "  gyro  raw: X=%6d Y=%6d Z=%6d", gx, gy, gz);
+    } else {
+        ESP_LOGW(TAG, "  gyro read failed");
+    }
+
+    uint8_t status = 0;
+    if (read_regs(0x0D, 0x06, &status, 1) == ESP_OK && (status & 0x01)) {
+        uint8_t mbuf[6];
+        if (read_regs(0x0D, 0x00, mbuf, 6) == ESP_OK) {
+            int16_t mx = (int16_t)(mbuf[1] << 8 | mbuf[0]);
+            int16_t my = (int16_t)(mbuf[3] << 8 | mbuf[2]);
+            int16_t mz = (int16_t)(mbuf[5] << 8 | mbuf[4]);
+            ESP_LOGI(TAG, "  mag   raw: X=%6d Y=%6d Z=%6d", mx, my, mz);
+        } else {
+            ESP_LOGW(TAG, "  mag data read failed");
+        }
+    } else {
+        ESP_LOGW(TAG, "  mag not ready (status=0x%02X)", status);
+    }
 }
 
 // ---------------- Battery voltage sense (ADC) ----------------
 // Reuses the adc_oneshot pattern from firmware/Analog_Input/main/main.c.
 
 static adc_oneshot_unit_handle_t vsense_adc = NULL;
+static adc_cali_handle_t vsense_cali = NULL;
 
 static void vsense_init(void)
 {
@@ -249,17 +314,26 @@ static void vsense_init(void)
         .atten = VSENSE_ATTEN,
     };
     ESP_ERROR_CHECK(adc_oneshot_config_channel(vsense_adc, VSENSE_ADC_CHANNEL, &chan_cfg));
+
+    // Per-chip efuse-based calibration (curve fitting scheme) — corrects the
+    // ADC's real gain/offset error instead of assuming an ideal 0-3300mV line.
+    adc_cali_curve_fitting_config_t cali_cfg = {
+        .unit_id = VSENSE_ADC_UNIT,
+        .chan = VSENSE_ADC_CHANNEL,
+        .atten = VSENSE_ATTEN,
+        .bitwidth = ADC_BITWIDTH_12,
+    };
+    ESP_ERROR_CHECK(adc_cali_create_scheme_curve_fitting(&cali_cfg, &vsense_cali));
 }
 
-// Rough conversion, no efuse calibration (esp_adc/adc_cali) — good enough to
-// confirm the divider is alive and in the right ballpark, not lab-accurate.
 static void vsense_read_and_log(void)
 {
     int raw = 0;
+    int adc_mv = 0;
     ESP_ERROR_CHECK(adc_oneshot_read(vsense_adc, VSENSE_ADC_CHANNEL, &raw));
-    float adc_mv = (raw * 3300.0f) / 4095.0f;
+    ESP_ERROR_CHECK(adc_cali_raw_to_voltage(vsense_cali, raw, &adc_mv));
     float batt_mv = adc_mv * VSENSE_DIVIDER_RATIO;
-    ESP_LOGI(TAG, "Vsense raw=%d adc=%.0fmV -> battery=%.2fV", raw, adc_mv, batt_mv / 1000.0f);
+    ESP_LOGI(TAG, "Vsense raw=%d adc=%dmV -> battery=%.2fV", raw, adc_mv, batt_mv / 1000.0f);
 }
 
 void app_main(void)
@@ -299,5 +373,6 @@ void app_main(void)
         ESP_ERROR_CHECK(pcnt_unit_get_count(unitB, &countB));
         ESP_LOGI(TAG, "encoder counts -> A: %d  B: %d", countA, countB);
         vsense_read_and_log();
+        gy85_read_and_log();
     }
 }
