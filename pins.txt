@@ -28,8 +28,14 @@ GPIO 14  vsense  battery voltage, ADC2 channel 3, divider 100k (top) / 22k (bott
 GPIO 48  RGB LED on the dev board (WS2812-type). Not driven by the firmware yet, so it
          floats and flickers; set it as an output and drive it low to keep it quiet.
 
-Not on strapping pins any more: the old encoder pins GPIO 3 and 46 are gone, so the
-old strapping-pin worry no longer applies. The old fake "GND" on GPIO 18 is also gone.
+History kept from the old inventory:
+- Old encoder pins GPIO 3 and 46 were ESP32-S3 strapping pins (sampled at reset). The new
+  PCB moved the encoders to GPIO 10-13, so that open question no longer applies.
+- RESOLVED 2026-08-13: GPIO 18 was wired as a fake "GND" driven LOW by firmware. That left the
+  TB6612 logic ground floating until the ESP32 booted, so the motor only ran if USB power came
+  up before the battery. The wire went to a real GND pin and the GND define was removed.
+- Not done: a formal strapping-pin / PSRAM-range / power-topology audit (Tutorial 2's job).
+  The new pin map was only checked on the bench (2026-09-05), not audited.
 
 Serial: the native USB port (303a) is output-only for the console; keyboard input in
 `idf.py monitor` needs the other USB port (WCH 1a86, console on UART0).
