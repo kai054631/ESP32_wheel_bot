@@ -29,3 +29,27 @@
 - Verified: `source ~/.espressif/tools/activate_idf_v5.3.2.sh` then `idf.py --version` → "ESP-IDF v5.3.2-dirty" (dirty suffix is harmless, normal for shallow submodule clone). IDF_PATH set correctly.
 - One non-fatal install error: couldn't copy OpenOCD udev rules to /etc/udev/rules.d (needs sudo) — irrelevant for now (flashing over WCH UART/cdc_acm, not JTAG); revisit only if JTAG debugging is needed later.
 - Tutorial 1 (~/robot_learner/tutorials/t01-esp-idf-bringup.html) is now fully unblocked — toolchain ready, board at /dev/ttyACM0 (when plugged in).
+
+## 2026-08-15 → 2026-09-05 — Firmware stages and the new PCB (from git log)
+- 08-15 initial backup of firmware, tutorials, docs, PCB snapshot. Tutorials in the repo: t01, t05–t08 (t02–t04 are not there).
+- 08-23 `GY85_Check`: I2C bring-up, then live data from all three sensors. The "magnetometer" is a QMC5883L clone (address 0x0D), not an HMC5883L.
+- 08-31 `Motor_Drive_With_IDF` tried on DRV8833, then went back to TB6612FNG on the new board.
+- 09-05 combined bring-up test on the new PCB pinout: both motors both ways, both encoders, GY-85 live data, battery voltage sense. Pin map is in `pins.txt`.
+
+## 2026-10-15 — Encoders to 4x, PWM→rpm table, first P speed control
+Code lives in `firmware/Motor_Drive_With_IDF/main/main.c` (main checkout, not committed yet).
+- **Encoder was only 2x decode.** Each PCNT unit had one channel. Hand-turning the wheel one turn gave ~957 ticks (expected 990 = 11 PPR × 2 × 45). Fix: a second channel per motor on the same unit (edge/level pins swapped). Rule: both channels of a motor use level action (KEEP, INVERSE); their edge actions are swapped; motor B is mirrored so its actions are the opposite of motor A.
+- Motor A now gives **1980 ticks per wheel turn** (11 PPR × 4 × 45), checked by hand. Motor B has the same two-channel setup and moved in the same direction as A; its ticks per turn were not reported — **still to verify**.
+- Encoder pins are swapped in the `#define`s (A: 11/10, B: 13/12) so forward counts **positive**. The names still say "phase A/B" — they are swapped on purpose.
+- Speed: `rpm = delta / 0.02 s / 1980 × 60`, `m/s = rpm × π × 0.065 / 60`. One tick per 20 ms is **1.5 rpm**, so steady readings jump by about ±1.5–2.5 rpm. That is quantisation, not instability.
+- **PWM → rpm, wheel in the air, 12.55 V** (steps of 5 %): 0, 5, 10 % → 0 rpm; 15 % → 21.2; 30 % → 50; 50 % → 89.4; 75 % → 137.9; 100 % → 190.9 rpm (0.649 m/s). Dead zone is between 10 and 15 %. Line fit above the dead zone: **rpm ≈ 2.01 × PWM − 9.9** (check: 50 % gives 90.5, measured 89.4). The `rpm/pwm` column is not constant because of the negative offset; the slope is. Floor (loaded) table not measured yet.
+- **Battery sense** (GPIO14, ADC2 ch3): divider 100k/22k → ×5.545. The plain `raw/4095 × 3.3 × 5.545` read about 8 % low (10.5 V on an 11.5 V pack, 11.59 V on 12.6 V). A gain of **1.09** fixes it to about ±0.05 V. The IDF curve-fit calibration (used in the 09-05 test) is still the better option.
+- **Serial gotcha:** the native USB port (303a, "USB JTAG serial debug unit") is output-only (console is UART0 with USB-JTAG as secondary). Keyboard input in `idf.py monitor` only works on the other USB port (WCH, 1a86). "Writing to serial is timing out" means wrong port.
+- **P control with feed-forward:** `pwm = (target + 9.9) / 2.01 + Kp × (target − rpm)`. Hold-the-wheel-then-release test at 40 rpm, 20 ms per line:
+  - Kp 0.35: 36 rpm after ~80 ms, no real overshoot.
+  - Kp 0.7: ~100 ms, no real overshoot.
+  - Kp 1.0: ~80 ms, but overshoots to 45.5 rpm (~14 %) and rings for ~160 ms.
+  - Use **Kp ≈ 0.5**. Loop gain = Kp × 2.01; above ~1 you get overshoot. A bigger Kp also makes the 1-tick noise bigger.
+  - With the wheel in the air the feed-forward is already almost exact, so the steady error is < 1 rpm. Under load P-only will leave an error → add the I term (t08).
+- Two false alarms: the "restart at PWM ≥ 45" was a key press (`0` set PWM to 0), not a reset. The random GPIO 48 RGB LED is a floating pin (not fixed yet: set it as output, low).
+- **Open items:** verify motor B (1980 per turn, sign of +PWM vs +rpm — if opposite, the loop runs away), measure the PWM→rpm table on the floor, PI controller (t08), battery check (read every cycle, hysteresis, command 0 when low instead of sleeping), wrap handling for the PCNT counter (±32767, ~5 s at full speed), tidy `main.c` (per-motor struct, named constants, `motor.c/h`).

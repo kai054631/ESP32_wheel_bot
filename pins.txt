@@ -1,44 +1,42 @@
-ESP32-S3 pin usage — inventory of what's currently defined in your code
-Generated 2026-08-12 from every main.c under ~/robot_learner/firmware/
-
-This is a plain inventory (what's written in code right now), not a verified
-wiring plan. The strapping-pin / PSRAM-range / power-topology audit is
-Tutorial 2's job — do that before treating any of this as final.
+ESP32-S3 pin usage — new custom PCB
+Updated 2026-10-15 from firmware/Motor_Drive_With_IDF/main/main.c (the pre-PCB pinout
+from 2026-08-12 is gone; see git history if you need it).
 
 =====================================================================
-ROBOT WIRING (from Motor_Drive_With_IDF/main/main.c — TB6612 + encoders + I2C)
+ROBOT WIRING (new PCB — TB6612FNG + encoders + GY-85 + battery sense)
 =====================================================================
-GPIO 4   pwmA    motor A PWM
-GPIO 5   AIN2    motor A phase change 2
-GPIO 6   AIN1    motor A phase change 1
+GPIO 4   PWMA    motor A PWM
+GPIO 6   AIN1    motor A direction 1
+GPIO 5   AIN2    motor A direction 2
 GPIO 7   STBY    TB6612 standby (HIGH = driver enabled)
-GPIO 15  BIN1    motor B phase change 1
-GPIO 16  BIN2    motor B phase change 2
 GPIO 17  PWMB    motor B PWM
-GPIO 8   enAA    motor A encoder, phase A
-GPIO 3   enAB    motor A encoder, phase B  ⚠ strapping pin, see note below
-GPIO 46  enBA    motor B encoder, phase A  ⚠ strapping pin, see note below
-GPIO 9   enBB    motor B encoder, phase B
-GPIO 11  sda     I2C SDA (GY-85)
-GPIO 10  scl     I2C SCL (GY-85)
+GPIO 15  BIN1    motor B direction 1
+GPIO 16  BIN2    motor B direction 2
 
-RESOLVED (2026-08-13): GPIO18 was previously wired as a fake "GND" driven
-LOW by firmware (gpio_set_level), which left the TB6612's logic ground
-floating until the ESP32 booted and caused the power-sequencing fault
-where the motor only ran if USB power came up before the battery. The
-wire has been moved to a real GND pin on the board; the GND define and
-all its gpio_config/gpio_set_level uses have been removed from
-Motor_Drive_With_IDF/main/main.c.
+Encoders (quadrature, 4x decode = 2 PCNT channels per motor, 1980 ticks per wheel turn):
+GPIO 11  enAA    motor A encoder  (defined as "phase A" but really the other phase)
+GPIO 10  enAB    motor A encoder
+GPIO 13  enBA    motor B encoder
+GPIO 12  enBB    motor B encoder
+  The two pins of each motor are swapped on purpose in the #defines so that
+  driving forward counts POSITIVE. Swap them back and the sign flips.
 
-OPEN (T5 task): GPIO 3 and GPIO 46 (enAB, enBA) are ESP32-S3 strapping
-pins — sampled at reset to configure boot behaviour. Not yet verified
-whether the encoder's idle/active levels on these pins are safe across a
-reset. Confirm against the ESP32-S3 datasheet's strapping-pin table
-before treating this wiring as final; fallback is moving the encoder to
-free GPIOs.
+GPIO 9   sda     I2C SDA (GY-85)
+GPIO 8   scl     I2C SCL (GY-85)
+GPIO 14  vsense  battery voltage, ADC2 channel 3, divider 100k (top) / 22k (bottom)
+                 battery V = pin V x 5.545 (plus a measured gain of ~1.09 on this board)
+GPIO 48  RGB LED on the dev board (WS2812-type). Not driven by the firmware yet, so it
+         floats and flickers; set it as an output and drive it low to keep it quiet.
+
+Not on strapping pins any more: the old encoder pins GPIO 3 and 46 are gone, so the
+old strapping-pin worry no longer applies. The old fake "GND" on GPIO 18 is also gone.
+
+Serial: the native USB port (303a) is output-only for the console; keyboard input in
+`idf.py monitor` needs the other USB port (WCH 1a86, console on UART0).
 
 =====================================================================
 STANDALONE LEARNING EXAMPLES (separate projects, not built/wired together)
+These use the OLD pin choices on a bare dev board. On the PCB, GPIO 9 is the I2C SDA.
 =====================================================================
 LED_Blink/main/main.c
   GPIO 9   LED_GPIO      output, blinking LED
@@ -65,5 +63,4 @@ robot_2wd/src/main.c (Tutorial 1 project)
 
 Note: GPIO 9 and GPIO 46 are reused with swapped roles between
 LED_Blink_Use_GPIO_Config and Interupt_example. That's harmless since
-these are separate, never-simultaneous builds — flagging it only so it
-doesn't look like a typo.
+these are separate, never-simultaneous builds.
