@@ -43,6 +43,7 @@ void motor_drive(motor_t *m, int value)
 void motor_update(motor_t *m)
 {
      int count = 0;
+     float limit_integral =10;
      // calculate tick per rev
      ESP_ERROR_CHECK(pcnt_unit_get_count(m->unit, &count));
      m->delta = count - m->prev;
@@ -66,13 +67,13 @@ void motor_update(motor_t *m)
           // close loop control
           float error = m->target_rpm - m->rpm;
           m->integral = m->integral + error * DT;
-          if (m->integral >= 30)
+          if (m->integral >= limit_integral)
           {
-               m->integral = 30;
+               m->integral = limit_integral;
           }
-          else if (m->integral <= -30)
+          else if (m->integral <= -limit_integral)
           {
-               m->integral = -30;
+               m->integral = -limit_integral;
           }
           m->pwm_out = ff + (motor_kp * error) + (motor_ki * m->integral);
           if (m->pwm_out >= 100)

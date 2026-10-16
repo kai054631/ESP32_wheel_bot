@@ -218,7 +218,7 @@ void app_main(void)
                motor_ki+=0.05;
                printf("Ki=%.2f\n",motor_ki);
           }else if (c=='4'){
-               motor_ki-=0.0i;
+               motor_ki-=0.05;
                printf("Ki=%.2f\n",motor_ki);
           }else if (c=='0'){
                motor_kp=0;
