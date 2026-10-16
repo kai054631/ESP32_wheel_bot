@@ -7,15 +7,14 @@
 #include <esp_adc/adc_oneshot.h>
 #include <esp_log.h>
 #include "sdkconfig.h"
-
+#include "motor.h"
+#include "motor.c"
 // static const char *TAG = "example";
 
 #define ADC_PIN ADC_CHANNEL_3
 #define ADC_UNIT ADC_UNIT_2
 #define ADC_BITWIDTH ADC_BITWIDTH_12
 #define ADC_ATTEN ADC_ATTEN_DB_12
-
-void motorMove(int mot, int value);
 
 #define PWMA 4 // motor A pwm pin
 #define AIN2 5 // motor A phase change 2
@@ -36,13 +35,10 @@ void motorMove(int mot, int value);
 #define sda 9 // gy85 pin 1
 #define scl 8 // gy85 pin 2
 
-#define MOTOR_B 0
-#define MOTOR_A 1
-
 #define PWMB_CHANNEL LEDC_CHANNEL_0
 #define PWMA_CHANNEL LEDC_CHANNEL_1
+
 #define PWM_TIMER LEDC_TIMER_0
-#define PWM_MODE LEDC_LOW_SPEED_MODE
 #define PWM_DUTY_RES LEDC_TIMER_10_BIT // 10-bit resolution (0-1023)
 #define PWM_FREQUENCY 25000
 
@@ -50,8 +46,18 @@ void motorMove(int mot, int value);
 #define ENC_LOW_LIMIT -32767
 
 pcnt_unit_handle_t unitA = NULL;
-
 pcnt_unit_handle_t unitB = NULL;
+
+motor_t motorA={
+     .in1 = AIN1,
+     .in2 = AIN2,
+     .pwm_channel = PWMA_CHANNEL   
+};
+motor_t motorB={
+     .in1 = BIN1,
+     .in2 = BIN2,
+     .pwm_channel = PWMB_CHANNEL   
+};
 
 void encoders_init()
 {
@@ -119,79 +125,6 @@ void encoders_init()
      ESP_ERROR_CHECK(pcnt_unit_start(unitB));       // start counting
 }
 
-void motorMove(int mot, int value)
-{
-     if (mot == 0) // MOTOR B
-     {
-          gpio_set_level(STBY, 1); // put high to enable the driver
-          if (value > 100)
-          {
-               value = 100;
-          }
-          if (value > 0) // FORWARD
-          {
-               int duty = value * 10.23;
-               gpio_set_level(BIN1, 1);
-               gpio_set_level(BIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMB_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMB_CHANNEL);
-               // printf(" duty cycle B : %d\n", duty);
-          }
-          else if (value < 0) // BACKWARD
-          {
-               int duty = -value * 10.23;
-               gpio_set_level(BIN1, 0);
-               gpio_set_level(BIN2, 1);
-               ledc_set_duty(PWM_MODE, PWMB_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMB_CHANNEL);
-               // printf(" duty cycle B : -%d\n", duty);
-          }
-          else // STOP
-          {
-               gpio_set_level(BIN1, 0);
-               gpio_set_level(BIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMB_CHANNEL, 0);
-               ledc_update_duty(PWM_MODE, PWMB_CHANNEL);
-               // printf(" Motor B Stop\n");
-          }
-          return;
-     }
-     else if (mot == 1) // MOTOR A DRIVE
-     {
-          gpio_set_level(STBY, 1); // put high to enable the driver
-          if (value > 100)
-          {
-               value = 100;
-          }
-          if (value > 0) // FORWARD
-          {
-               int duty = value * 10.23;
-               gpio_set_level(AIN1, 1);
-               gpio_set_level(AIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMA_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMA_CHANNEL);
-               // printf(" duty cycle A : %d\n", duty);
-          }
-          else if (value < 0) // BACKWARD
-          {
-               int duty = -value * 10.23;
-               gpio_set_level(AIN1, 0);
-               gpio_set_level(AIN2, 1);
-               ledc_set_duty(PWM_MODE, PWMA_CHANNEL, duty);
-               ledc_update_duty(PWM_MODE, PWMA_CHANNEL);
-               // printf(" duty cycle A : -%d\n", duty);
-          }
-          else // STOP
-          {
-               gpio_set_level(AIN1, 0);
-               gpio_set_level(AIN2, 0);
-               ledc_set_duty(PWM_MODE, PWMA_CHANNEL, 0);
-               ledc_update_duty(PWM_MODE, PWMA_CHANNEL);
-               // printf(" Motor A Stop\n");
-          }
-          return;
-     }
-}
 void app_main(void)
 {
      // UNIVERSAL PIN CONFIG
@@ -252,6 +185,9 @@ void app_main(void)
      gpio_set_level(STBY, 1); // put high to enable the driver
 
      encoders_init();
+     motorA.unit=unitA;
+     motorB.unit=unitB;
+
 
      // BATTERY VOLTAGE CHECK CODE
      int adc_value;
@@ -269,23 +205,18 @@ void app_main(void)
      };
      ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_PIN, &config));
 
-     int countA = 0;
-     int prevA = 0;
-     int deltaA = 0;
+     
 
-     int countB = 0;
-     int prevB = 0;
-     int deltaB = 0;
      TickType_t last_wake = xTaskGetTickCount();
 
      int print=0;
-     int targetA_rpm=30,targetB_rpm=30;
-     float ffA=(targetA_rpm + 9.9) / 2.01,ffB=(targetB_rpm + 9.9) / 2.01;
-     float intergalA=0.0,intergalB=0.0;
-     int pwmA_out=0,pwmB_out=0;
+     int countA=0,countB=0;
+     int ffA=0,ffB=0;
      float Kp=0.5,Ki=1.0;
      while (1)
      {
+          motorA.target_rpm=30;
+          motorB.target_rpm=20;
           int c =getchar();
           
           if (c=='1'){
@@ -302,67 +233,68 @@ void app_main(void)
           float battery_volt=(adc_value / 4095.0) * 18.282 * Volt_Gain;
           if (battery_volt  >= 11.2)
           {
+               gpio_set_level(STBY, 1);
                ESP_ERROR_CHECK(pcnt_unit_get_count(unitA, &countA));
                ESP_ERROR_CHECK(pcnt_unit_get_count(unitB, &countB));
 
-               deltaA = countA - prevA;
-               if(deltaA>ENC_HIGH_LIMIT/2){
-                    deltaA-=ENC_HIGH_LIMIT;
-               }else if(deltaA<-ENC_HIGH_LIMIT/2){
-                    deltaA+=ENC_HIGH_LIMIT;
+               motorA.delta = countA - motorA.prev;
+               if(motorA.delta>ENC_HIGH_LIMIT/2){
+                    motorA.delta-=ENC_HIGH_LIMIT;
+               }else if(motorA.delta<-ENC_HIGH_LIMIT/2){
+                    motorA.delta+=ENC_HIGH_LIMIT;
                }
                
-               float speedA    = deltaA/0.02;   //20ms period
-               float revA      =speedA/1980.0;       //11ppr*4 time pcnt*(1:45)ratio
-               float rpmA      =revA*60; 
-               float velA      =rpmA*3.14*0.065/60;   //rpm*pi*65mm wheel diameter 
+               float speedA = motorA.delta/0.02;   //20ms period
+               float revA   =speedA/1980.0;       //11ppr*4 time pcnt*(1:45)ratio
+               float rpmA   =revA*60; 
+               float velA   =rpmA*3.14*0.065/60;   //rpm*pi*65mm wheel diameter 
 
-               deltaB = countB - prevB;
-               if(deltaB>=ENC_HIGH_LIMIT/2){
-                    deltaB-=32767;
-               }else if(deltaB<=-ENC_HIGH_LIMIT/2){
-                    deltaB+=ENC_HIGH_LIMIT;
+               motorB.delta = countB - motorB.prev;
+               if(motorB.delta>=ENC_HIGH_LIMIT/2){
+                    motorB.delta-=32767;
+               }else if(motorB.delta<=-ENC_HIGH_LIMIT/2){
+                    motorB.delta+=ENC_HIGH_LIMIT;
                }
-               float speedB    = deltaB/0.02;   //20ms period
-               float revB      =speedB/1980.0;       //11ppr*4 time pcnt*(1:45)ratio
-               float rpmB      =revB*60; 
-               float velB      =rpmB*3.14*0.065/60;   //rpm*pi*65mm wheel diameter 
+               float speedB = motorB.delta / 0.02;   //20ms period
+               float revB   = speedB/1980.0;       //11ppr*4 time pcnt*(1:45)ratio
+               float rpmB   = revB*60; 
+               float velB   = rpmB*3.14*0.065/60;   //rpm*pi*65mm wheel diameter 
 
-               float errorA =targetA_rpm - rpmA;
-               intergalA = intergalA+errorA*0.02;
-               if(intergalA >=30){
-                    intergalA=30;
-               }else if(intergalA <=-30){
-                    intergalA=-30;
+               float errorA =motorA.target_rpm - rpmA;
+               motorA.integral = motorA.integral+errorA*0.02;
+               if(motorA.integral >=30){
+                    motorA.integral=30;
+               }else if(motorA.integral <=-30){
+                    motorA.integral=-30;
                }
-               pwmA_out = ffA+(Kp*errorA)+(Ki*intergalA);
+               motorA.pwm_out = ffA+(Kp*errorA)+(Ki*motorA.integral);
 
-               float errorB =targetB_rpm - rpmB;
-               intergalB = intergalB+errorB*0.02;
-               if(intergalB >=30){
-                    intergalB=30;
-               }else if(intergalB <=-30){
-                    intergalB=-30;
+               float errorB =motorB.target_rpm - rpmB;
+               motorB.integral = motorB.integral+errorB*0.02;
+               if(motorB.integral >=30){
+                    motorB.integral=30;
+               }else if(motorB.integral <=-30){
+                    motorB.integral=-30;
                }
-               pwmB_out = ffB+(Kp*errorB)+(Ki*intergalB);
+               motorB.pwm_out = ffB+(Kp*errorB)+(Ki*motorB.integral);
 
-               if(pwmA_out>=100){
-                    pwmA_out=100;
-               }else if(pwmA_out<=-100){
-                    pwmA_out=-100;
-               }else if(pwmA_out>0 && pwmA_out<=15){
-                    pwmA_out=15;
+               if(motorA.pwm_out>=100){
+                    motorA.pwm_out=100;
+               }else if(motorA.pwm_out<=-100){
+                    motorA.pwm_out=-100;
+               }else if(motorA.pwm_out>0 && motorA.pwm_out<=15){
+                    motorA.pwm_out=15;
                }
-               motorMove(MOTOR_A, pwmA_out);
+               motor_drive(&motorA, motorA.pwm_out);
 
-               if(pwmB_out>=100){
-                    pwmB_out=100;
-               }else if(pwmB_out<=-100){
-                    pwmB_out=-100;
-               }else if(pwmB_out>0 && pwmB_out<=15){
-                    pwmB_out=15;
+               if(motorB.pwm_out>=100){
+                    motorB.pwm_out=100;
+               }else if(motorB.pwm_out<=-100){
+                    motorB.pwm_out=-100;
+               }else if(motorB.pwm_out>0 && motorB.pwm_out<=15){
+                    motorB.pwm_out=15;
                }
-               motorMove(MOTOR_B, pwmB_out);
+               motor_drive(&motorB, motorB.pwm_out);
 
                if(print>=3){
                     printf("error A :%.3f   RPM MOTOR A : %.4f    VEVLOCITY A : %.4f    VOLT:%.2f\n",errorA, rpmA, velA, battery_volt);
@@ -370,10 +302,9 @@ void app_main(void)
                     print=0;
                }
                print++;
-
                vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(20));
-               prevA = countA;
-               prevB = countB;
+               motorA.prev = countA;
+               motorB.prev = countB;
           }
           else
           {
