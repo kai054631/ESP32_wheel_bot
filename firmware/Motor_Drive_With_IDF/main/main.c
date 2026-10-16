@@ -44,16 +44,14 @@
 pcnt_unit_handle_t unitA = NULL;
 pcnt_unit_handle_t unitB = NULL;
 
-motor_t motorA={
-     .in1 = AIN1,
-     .in2 = AIN2,
-     .pwm_channel = PWMA_CHANNEL   
-};
-motor_t motorB={
-     .in1 = BIN1,
-     .in2 = BIN2,
-     .pwm_channel = PWMB_CHANNEL   
-};
+motor_t motorA = {
+    .in1 = AIN1,
+    .in2 = AIN2,
+    .pwm_channel = PWMA_CHANNEL};
+motor_t motorB = {
+    .in1 = BIN1,
+    .in2 = BIN2,
+    .pwm_channel = PWMB_CHANNEL};
 
 void encoders_init()
 {
@@ -69,21 +67,19 @@ void encoders_init()
      ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(unitA, &filter_cfg));
      ESP_ERROR_CHECK(pcnt_unit_set_glitch_filter(unitB, &filter_cfg));
 
-     //channel A
+     // channel A
      pcnt_chan_config_t chanAA_cfg = {
          .edge_gpio_num = enAA,
-         .level_gpio_num = enAB
-     };
+         .level_gpio_num = enAB};
      pcnt_channel_handle_t chanAA = NULL;
      ESP_ERROR_CHECK(pcnt_new_channel(unitA, &chanAA_cfg, &chanAA));
      pcnt_chan_config_t chanAB_cfg = {
          .edge_gpio_num = enAB,
-         .level_gpio_num = enAA
-     };
+         .level_gpio_num = enAA};
      pcnt_channel_handle_t chanAB = NULL;
      ESP_ERROR_CHECK(pcnt_new_channel(unitA, &chanAB_cfg, &chanAB));
 
-     //channel B
+     // channel B
      pcnt_chan_config_t chanBA_cfg = {
          .edge_gpio_num = enBA,
          .level_gpio_num = enBB,
@@ -99,7 +95,7 @@ void encoders_init()
 
      // 4x decode: every edge on A or B counts, direction s et by the other
      // channel's current level
-     //channel A
+     // channel A
      ESP_ERROR_CHECK(pcnt_channel_set_edge_action(chanAA, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
      ESP_ERROR_CHECK(pcnt_channel_set_level_action(chanAA, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
      ESP_ERROR_CHECK(pcnt_channel_set_edge_action(chanAB, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
@@ -109,7 +105,7 @@ void encoders_init()
      ESP_ERROR_CHECK(pcnt_unit_clear_count(unitA)); // clear count to 0
      ESP_ERROR_CHECK(pcnt_unit_start(unitA));       // start counting
 
-     //channel B
+     // channel B
      ESP_ERROR_CHECK(pcnt_channel_set_edge_action(chanBA, PCNT_CHANNEL_EDGE_ACTION_INCREASE, PCNT_CHANNEL_EDGE_ACTION_DECREASE));
      ESP_ERROR_CHECK(pcnt_channel_set_level_action(chanBA, PCNT_CHANNEL_LEVEL_ACTION_KEEP, PCNT_CHANNEL_LEVEL_ACTION_INVERSE));
      ESP_ERROR_CHECK(pcnt_channel_set_edge_action(chanBB, PCNT_CHANNEL_EDGE_ACTION_DECREASE, PCNT_CHANNEL_EDGE_ACTION_INCREASE));
@@ -178,8 +174,8 @@ void app_main(void)
      ESP_ERROR_CHECK(ledc_channel_config(&motorA_channel));
 
      encoders_init();
-     motorA.unit=unitA;
-     motorB.unit=unitB;
+     motorA.unit = unitA;
+     motorB.unit = unitB;
 
      // BATTERY VOLTAGE CHECK CODE
      int adc_value;
@@ -199,42 +195,68 @@ void app_main(void)
 
      TickType_t last_wake = xTaskGetTickCount();
 
-     int print=0;
+     int print = 0;
+     motorA.target_rpm = 30;
+     motorB.target_rpm = 30;
      while (1)
      {
-          motorA.target_rpm=30;
-          motorB.target_rpm=20;
-          int c =getchar();
-          
-          if (c=='1'){
-               motor_kp+=0.05;
-               printf("Kp=%.2f\n",motor_kp);
-          }else if (c=='2'){
-               motor_kp-=0.05;
-               printf("Kp=%.2f\n",motor_kp);
-          }else if (c=='0'){
-               motor_kp=0;
-          }else if (c=='3'){
-               motor_ki+=0.05;
-               printf("Ki=%.2f\n",motor_ki);
-          }else if (c=='4'){
-               motor_ki-=0.05;
-               printf("Ki=%.2f\n",motor_ki);
-          }else if (c=='0'){
-               motor_kp=0;
-               motor_ki=0;
+          int c = getchar();
+
+          if (c == '1')
+          {
+               motor_kp += 0.05;
+               printf("Kp=%.2f\n", motor_kp);
           }
-          
+          else if (c == '2')
+          {
+               motor_kp -= 0.05;
+               printf("Kp=%.2f\n", motor_kp);
+          }
+          else if (c == '0')
+          {
+               motor_kp = 0;
+          }
+          else if (c == '3')
+          {
+               motor_ki += 0.05;
+               printf("Ki=%.2f\n", motor_ki);
+          }
+          else if (c == '4')
+          {
+               motor_ki -= 0.05;
+               printf("Ki=%.2f\n", motor_ki);
+          }
+          else if (c == '5')
+          {
+               motorA.target_rpm += 5;
+               motorB.target_rpm += 5;
+               printf("rpm=%d\n", motorA.target_rpm);
+          }
+          else if (c == '6')
+          {
+               motorA.target_rpm -= 5;
+               motorB.target_rpm -= 5;
+               printf("rpm=%d\n", motorA.target_rpm);
+          }
+          else if (c == '0')
+          {
+               motor_kp = 0;
+               motor_ki = 0;
+               motorA.target_rpm = 0;
+               motorB.target_rpm = 0;
+          }
+
           ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_PIN, &adc_value));
-          float battery_volt=(adc_value / 4095.0) * 18.282 * Volt_Gain;
-          if (battery_volt  >= 11.2)
+          float battery_volt = (adc_value / 4095.0) * 18.282 * Volt_Gain;
+          if (battery_volt >= 11.2)
           {
                gpio_set_level(STBY, 1);
                motor_update(&motorA);
                motor_update(&motorB);
-               if(print>=3){
-                    printf("RPM MOTOR A : %.4f   RPM MOTOR B : %.4f   VOLT:%.2f\n",motorA.rpm,motorB.rpm,battery_volt);
-                    print=0;
+               if (print >= 3)
+               {
+                    printf("RPM MOTOR A : %.4f   RPM MOTOR B : %.4f   VOLT:%.2f\n", motorA.rpm, motorB.rpm, battery_volt);
+                    print = 0;
                }
                print++;
                vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(20));
@@ -243,7 +265,7 @@ void app_main(void)
           {
                gpio_set_level(STBY, 0);
                // printf("MOTOR A : %d    SPEED A : %d    VOLT:%.2f\n", deltaA, adc_value, battery_volt);
-               printf("battery LOW VOLT:%.2f\n",battery_volt);
+               printf("battery LOW VOLT:%.2f\n", battery_volt);
                vTaskDelay(1000 / portTICK_PERIOD_MS);
           }
      }
