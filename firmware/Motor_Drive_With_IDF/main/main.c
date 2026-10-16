@@ -8,7 +8,6 @@
 #include <esp_log.h>
 #include "sdkconfig.h"
 #include "motor.h"
-#include "motor.c"
 // static const char *TAG = "example";
 
 #define ADC_PIN ADC_CHANNEL_3
@@ -41,9 +40,6 @@
 #define PWM_TIMER LEDC_TIMER_0
 #define PWM_DUTY_RES LEDC_TIMER_10_BIT // 10-bit resolution (0-1023)
 #define PWM_FREQUENCY 25000
-
-#define ENC_HIGH_LIMIT 32767
-#define ENC_LOW_LIMIT -32767
 
 pcnt_unit_handle_t unitA = NULL;
 pcnt_unit_handle_t unitB = NULL;
@@ -100,7 +96,6 @@ void encoders_init()
      };
      pcnt_channel_handle_t chanBB = NULL;
      ESP_ERROR_CHECK(pcnt_new_channel(unitB, &chanBB_cfg, &chanBB));
-     
 
      // 4x decode: every edge on A or B counts, direction s et by the other
      // channel's current level
@@ -182,12 +177,9 @@ void app_main(void)
      // ledc_channel_config(&motorA_channel);
      ESP_ERROR_CHECK(ledc_channel_config(&motorA_channel));
 
-     gpio_set_level(STBY, 1); // put high to enable the driver
-
      encoders_init();
      motorA.unit=unitA;
      motorB.unit=unitB;
-
 
      // BATTERY VOLTAGE CHECK CODE
      int adc_value;
@@ -205,14 +197,9 @@ void app_main(void)
      };
      ESP_ERROR_CHECK(adc_oneshot_config_channel(adc_handle, ADC_PIN, &config));
 
-     
-
      TickType_t last_wake = xTaskGetTickCount();
 
      int print=0;
-     int countA=0,countB=0;
-     int ffA=0,ffB=0;
-     float Kp=0.5,Ki=1.0;
      while (1)
      {
           motorA.target_rpm=30;
@@ -220,13 +207,22 @@ void app_main(void)
           int c =getchar();
           
           if (c=='1'){
-               Kp+=0.05;
-               printf("Kp=%.2f\n",Kp);
+               motor_kp+=0.05;
+               printf("Kp=%.2f\n",motor_kp);
           }else if (c=='2'){
-               Kp-=0.05;
-               printf("Kp=%.2f\n",Kp);
+               motor_kp-=0.05;
+               printf("Kp=%.2f\n",motor_kp);
           }else if (c=='0'){
-               Kp=0;
+               motor_kp=0;
+          }else if (c=='3'){
+               motor_ki+=0.05;
+               printf("Ki=%.2f\n",motor_ki);
+          }else if (c=='4'){
+               motor_ki-=0.0i;
+               printf("Ki=%.2f\n",motor_ki);
+          }else if (c=='0'){
+               motor_kp=0;
+               motor_ki=0;
           }
           
           ESP_ERROR_CHECK(adc_oneshot_read(adc_handle, ADC_PIN, &adc_value));
@@ -234,77 +230,14 @@ void app_main(void)
           if (battery_volt  >= 11.2)
           {
                gpio_set_level(STBY, 1);
-               ESP_ERROR_CHECK(pcnt_unit_get_count(unitA, &countA));
-               ESP_ERROR_CHECK(pcnt_unit_get_count(unitB, &countB));
-
-               motorA.delta = countA - motorA.prev;
-               if(motorA.delta>ENC_HIGH_LIMIT/2){
-                    motorA.delta-=ENC_HIGH_LIMIT;
-               }else if(motorA.delta<-ENC_HIGH_LIMIT/2){
-                    motorA.delta+=ENC_HIGH_LIMIT;
-               }
-               
-               float speedA = motorA.delta/0.02;   //20ms period
-               float revA   =speedA/1980.0;       //11ppr*4 time pcnt*(1:45)ratio
-               float rpmA   =revA*60; 
-               float velA   =rpmA*3.14*0.065/60;   //rpm*pi*65mm wheel diameter 
-
-               motorB.delta = countB - motorB.prev;
-               if(motorB.delta>=ENC_HIGH_LIMIT/2){
-                    motorB.delta-=32767;
-               }else if(motorB.delta<=-ENC_HIGH_LIMIT/2){
-                    motorB.delta+=ENC_HIGH_LIMIT;
-               }
-               float speedB = motorB.delta / 0.02;   //20ms period
-               float revB   = speedB/1980.0;       //11ppr*4 time pcnt*(1:45)ratio
-               float rpmB   = revB*60; 
-               float velB   = rpmB*3.14*0.065/60;   //rpm*pi*65mm wheel diameter 
-
-               float errorA =motorA.target_rpm - rpmA;
-               motorA.integral = motorA.integral+errorA*0.02;
-               if(motorA.integral >=30){
-                    motorA.integral=30;
-               }else if(motorA.integral <=-30){
-                    motorA.integral=-30;
-               }
-               motorA.pwm_out = ffA+(Kp*errorA)+(Ki*motorA.integral);
-
-               float errorB =motorB.target_rpm - rpmB;
-               motorB.integral = motorB.integral+errorB*0.02;
-               if(motorB.integral >=30){
-                    motorB.integral=30;
-               }else if(motorB.integral <=-30){
-                    motorB.integral=-30;
-               }
-               motorB.pwm_out = ffB+(Kp*errorB)+(Ki*motorB.integral);
-
-               if(motorA.pwm_out>=100){
-                    motorA.pwm_out=100;
-               }else if(motorA.pwm_out<=-100){
-                    motorA.pwm_out=-100;
-               }else if(motorA.pwm_out>0 && motorA.pwm_out<=15){
-                    motorA.pwm_out=15;
-               }
-               motor_drive(&motorA, motorA.pwm_out);
-
-               if(motorB.pwm_out>=100){
-                    motorB.pwm_out=100;
-               }else if(motorB.pwm_out<=-100){
-                    motorB.pwm_out=-100;
-               }else if(motorB.pwm_out>0 && motorB.pwm_out<=15){
-                    motorB.pwm_out=15;
-               }
-               motor_drive(&motorB, motorB.pwm_out);
-
+               motor_update(&motorA);
+               motor_update(&motorB);
                if(print>=3){
-                    printf("error A :%.3f   RPM MOTOR A : %.4f    VEVLOCITY A : %.4f    VOLT:%.2f\n",errorA, rpmA, velA, battery_volt);
-                    printf("error B :%.3f   RPM MOTOR B : %.4f    VEVLOCITY B : %.4f    VOLT:%.2f\n",errorB, rpmB, velB, battery_volt);
+                    printf("RPM MOTOR A : %.4f   RPM MOTOR B : %.4f   VOLT:%.2f\n",motorA.rpm,motorB.rpm,battery_volt);
                     print=0;
                }
                print++;
                vTaskDelayUntil(&last_wake, pdMS_TO_TICKS(20));
-               motorA.prev = countA;
-               motorB.prev = countB;
           }
           else
           {
