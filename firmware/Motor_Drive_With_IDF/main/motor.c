@@ -58,9 +58,10 @@ void motor_update(motor_t *m)
      }
      // convert tick per rev to rpm and velocity
      float speed = m->delta / DT;       // 20ms period
-     float rev = speed / TICKS_PER_REV; // 11ppr*4 time pcnt*(1:45)ratio
-     m->rpm = rev * 60;
-
+     float rev_per_s = speed / TICKS_PER_REV; // 11ppr*4 time pcnt*(1:45)ratio
+     m->dist = m->delta * METER_PER_TICK;
+     m->rpm = rev_per_s * 60;
+     m->vel=rev_per_s*(M_PI*WHEEL_DIAMETER);
      m->prev = count;
      float ff=(fabsf(m->target_rpm) + 9.9) / 2.01;
      if(m->target_rpm<0){

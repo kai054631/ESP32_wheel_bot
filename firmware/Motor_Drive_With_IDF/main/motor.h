@@ -7,11 +7,13 @@
 #define PWM_MODE LEDC_LOW_SPEED_MODE
 #define TICKS_PER_REV 1980 //ppr(11)*gear_ratio(1:45)*decode times(4)
 #define DT 0.02 //20ms per cycle
+#define WHEEL_DIAMETER  0.0685   //m
+#define METER_PER_TICK ((M_PI*WHEEL_DIAMETER)/TICKS_PER_REV)
 
 #define ENC_HIGH_LIMIT 32767
 #define ENC_LOW_LIMIT -32767
 
-extern float motor_kp, motor_ki;
+extern float motor_kp, motor_ki;   
 typedef struct{
      int in1,in2;
      ledc_channel_t pwm_channel;
@@ -22,7 +24,10 @@ typedef struct{
      float target_rpm; 
      float integral;
      int pwm_out;
-     float rpm;      
+     float rpm; 
+     float dist;
+     float vel;  
+
 } motor_t;
 
 void motor_drive(motor_t *m,int val);
