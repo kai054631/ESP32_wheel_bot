@@ -7,7 +7,7 @@ Parses the lines the firmware prints:
 and draws the pose (position + heading) and the trail.
 
 The robot serves ONE TCP client, so this window also forwards the keys
-w a s d 5 6 0 to the robot (use it instead of `nc`).
+w a s d and SPACE (stop) to the robot (use it instead of `nc`).
 
   python3 tools/robot_map.py                  # 192.168.68.148:3333
   python3 tools/robot_map.py 192.168.68.150   # other address
@@ -27,7 +27,7 @@ ODOM_RE = re.compile(r"Odom:\s*X:\s*(-?[\d.]+),\s*Y:\s*(-?[\d.]+),\s*theta:\s*(-
 RPM_RE = re.compile(
     r"Target RPM:\s*(-?[\d.]+),\s*RPM MOTOR A\s*:\s*(-?[\d.]+)\s+RPM MOTOR B\s*:\s*(-?[\d.]+)\s+VOLT:\s*(-?[\d.]+)"
 )
-SEND_KEYS = "wasd560"  # forwarded to the robot as they are
+SEND_KEYS = "wasd "  # forwarded to the robot as they are (space = stop)
 
 
 def parse_line(line):
@@ -164,7 +164,7 @@ def build_ui(state, link):
     arrow = Polygon(pose_triangle(0, 0, 0), closed=True, color="tab:red", zorder=5)
     ax.add_patch(arrow)
     info = ax.text(0.01, 0.99, "", transform=ax.transAxes, va="top", family="monospace", fontsize=9)
-    ax.set_title("keys: w a s d 5 6 0 -> robot   c = new origin   q = quit")
+    ax.set_title("keys: w a s d, SPACE = stop -> robot   c = new origin   q = quit")
 
     def update(_frame=None):
         with state.lock:
@@ -226,9 +226,19 @@ def selftest():
     st.reset_origin()
     st.feed("Odom: X: 700,   Y:150,    theta:60.0")
     assert abs(st.trail[-1][0] - 0.12) < 1e-9  # relative to the new origin
-    fig, update = build_ui(st, Link("127.0.0.1", 1, st))
+    sent = []
+
+    class FakeLink:
+        send = staticmethod(sent.append)
+
+    fig, update = build_ui(st, FakeLink)
     update()
     fig.canvas.draw()
+    from matplotlib.backend_bases import KeyEvent
+
+    for k in ("w", " ", "x"):  # 'x' is not a robot key
+        fig.canvas.callbacks.process("key_press_event", KeyEvent("key_press_event", fig.canvas, k))
+    assert sent == ["w", " "], sent
     tri = pose_triangle(0, 0, 90)
     assert abs(tri[0][0]) < 1e-9 and tri[0][1] > 0  # theta 90 deg points to +y
     print("selftest OK")
