@@ -97,3 +97,41 @@ Code is in `firmware/Motor_Drive_With_IDF/main/`. Style rule from 2026-10-25: wr
 3. Handle the ADC2 error when Wi-Fi is on.
 4. Calibrate `TRACK_WIDTH` on the floor (3 turns, take the average).
 5. Measure the PWM-to-rpm table on the floor.
+
+## 2026-10-25 (later) — Track width calibration, first results
+Goal: find the effective track width L. The odometry uses `dtheta = (dR - dL) / L`. A wrong L gives a wrong turn angle by the same ratio.
+
+**Measured sizes:** the gap between the wheels is 157 mm. Each wheel is 26 mm wide. So the track width from the sizes is 183 mm. The code first used `TRACK_WIDTH 0.1832`.
+
+**Test 1: A = 35 rpm, B = 0 (left wheel drives, robot turns clockwise around the right wheel). Odometry was reset.**
+- The robot turned about one full turn (set by eye). The theta reading was **-378.1 deg**. The position was x = 0.029 m, y = 0.005 m.
+- Check: the robot turned 18 deg more than one turn. The center then moves `L * sin(9 deg) = 0.1832 * 0.156 = 0.029 m`. This matches x. The odometry is consistent inside.
+
+**Test 2: B = 35 rpm, A = 0 (right wheel drives, robot turns counter-clockwise around the left wheel). Odometry was NOT reset.**
+- The reading after the test was theta = -6.6 deg, x = 0.047 m, y = 0.009 m.
+- Theta adds up over time. So this turn read -6.6 - (-378.1) = **+371.5 deg**.
+- Check: the robot turned 11.5 deg more than one turn. The center moved by `L * sin(5.75 deg) = 0.018 m`. The measured change was (0.018, 0.004) m. This matches.
+- The sign of y is opposite to the ideal calculation, by about 4 mm. The wheel that should not move probably rolls a little. This is small.
+
+**Result (L = 0.1832 in both tests, one run each, one turn judged by eye):**
+
+| Test | Reading | Ratio to 360 deg |
+|---|---|---|
+| Test 1, clockwise | 378.1 deg | 1.050 |
+| Test 2, counter-clockwise | 371.5 deg | 1.032 |
+| Mean | 374.8 deg | 1.041 |
+
+- New L = 0.1832 * 1.041 = **0.1907 m**. `TRACK_WIDTH` is now set to **0.19**.
+- Formula: `L_new = L_old * (reading / real angle)`. If the reading is too large, L is too small.
+- The effective L (about 190 mm) is larger than the size from the ruler (183 mm). The contact area of the tire is probably at the outer side of the wheel. The dead wheel also drags and adds some slip.
+- The two directions differ by 1.8 %. It can come from the error of the eye (3 to 5 deg), or from wheel slip. One run each cannot tell which.
+
+**Rules for the next test**
+1. Reset the odometry before each test. Press the EN (reset) button.
+2. Put the dead wheel straight at the rear before each start.
+3. Do 3 runs for each direction (6 runs). Use the same mark on the robot to judge one turn.
+4. Take the mean of all runs. Set `TRACK_WIDTH` to `0.19 * (mean reading / 360)`.
+5. Keep 0.6 m of free floor. The rear of the robot sweeps a circle of about 0.5 m diameter.
+
+**Status:** waiting for the 6 readings with `TRACK_WIDTH = 0.19`.
+**New open item:** add a key to the firmware that sets `odom` to zero (for example the `r` key). Then the EN button is not needed between tests.
