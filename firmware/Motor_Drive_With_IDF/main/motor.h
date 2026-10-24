@@ -19,7 +19,7 @@ typedef struct{
      
      int prev;
      int delta;
-     int target_rpm; 
+     float target_rpm; 
      float integral;
      int pwm_out;
      float rpm;      

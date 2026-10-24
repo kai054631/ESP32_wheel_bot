@@ -1,4 +1,5 @@
 #include "motor.h"
+#include "math.h"
 
 float motor_kp = 0.5, motor_ki = 1.0;
 
@@ -59,9 +60,13 @@ void motor_update(motor_t *m)
      float speed = m->delta / DT;       // 20ms period
      float rev = speed / TICKS_PER_REV; // 11ppr*4 time pcnt*(1:45)ratio
      m->rpm = rev * 60;
-     // float velo = m->rpm * 3.14 * 0.065 / 60; // rpm*pi*65mm wheel diameter
+
      m->prev = count;
-     float ff = (m->target_rpm + 9.9) / 2.01;
+     float ff=(fabsf(m->target_rpm) + 9.9) / 2.01;
+     if(m->target_rpm<0){
+          ff = -ff;
+     }
+     
      if (m->target_rpm != 0)
      {
           // close loop control
@@ -87,6 +92,10 @@ void motor_update(motor_t *m)
           else if (m->pwm_out > 0 && m->pwm_out < 15)
           {
                m->pwm_out = 15;
+          }
+          else if (m->pwm_out > -15 && m->pwm_out < 0)
+          {
+               m->pwm_out = -15;
           }
           motor_drive(m, m->pwm_out);
      }

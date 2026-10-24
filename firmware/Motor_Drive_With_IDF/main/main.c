@@ -15,21 +15,21 @@
 #define ADC_BITWIDTH ADC_BITWIDTH_12
 #define ADC_ATTEN ADC_ATTEN_DB_12
 
-#define PWMA 4 // motor A pwm pin
-#define AIN2 5 // motor A phase change 2
-#define AIN1 6 // motor A phase change 1
-
 #define STBY 7 // standby pin for tb6612fng, high to run motor
 
-#define BIN1 15 // motor B phase change 1
-#define BIN2 16 // motor B phase change 2
-#define PWMB 17 // motor B pwm pin
+#define PWMB 4 // motor B pwm pin
+#define BIN2 5 // motor B phase change 2
+#define BIN1 6 // motor B phase change 1
 
-#define enAA 11 // motor A phase A encoder
-#define enAB 10 // motor A phase B encoder
+#define AIN1 15 // motor A phase change 1
+#define AIN2 16 // motor A phase change 2
+#define PWMA 17 // motor A pwm pin
 
-#define enBA 13 // motor B phase A encoder
-#define enBB 12 // motor B phase B encoder
+#define enBA 10 // motor B phase A encoder
+#define enBB 11 // motor B phase B encoder
+
+#define enAA 12 // motor A phase A encoder
+#define enAB 13 // motor A phase B encoder
 
 #define sda 9 // gy85 pin 1
 #define scl 8 // gy85 pin 2
@@ -201,7 +201,6 @@ void app_main(void)
      while (1)
      {
           int c = getchar();
-
           if (c == '1')
           {
                motor_kp += 0.05;
@@ -211,10 +210,6 @@ void app_main(void)
           {
                motor_kp -= 0.05;
                printf("Kp=%.2f\n", motor_kp);
-          }
-          else if (c == '0')
-          {
-               motor_kp = 0;
           }
           else if (c == '3')
           {
@@ -230,13 +225,13 @@ void app_main(void)
           {
                motorA.target_rpm += 5;
                motorB.target_rpm += 5;
-               printf("rpm=%d\n", motorA.target_rpm);
+               printf("rpm=%.1f\n", motorA.target_rpm);
           }
           else if (c == '6')
           {
                motorA.target_rpm -= 5;
                motorB.target_rpm -= 5;
-               printf("rpm=%d\n", motorA.target_rpm);
+               printf("rpm=%.2f\n", motorA.target_rpm);
           }
           else if (c == '0')
           {
@@ -255,7 +250,7 @@ void app_main(void)
                motor_update(&motorB);
                if (print >= 3)
                {
-                    printf("RPM MOTOR A : %.4f   RPM MOTOR B : %.4f   VOLT:%.2f\n", motorA.rpm, motorB.rpm, battery_volt);
+                    printf("Target RPM: %.1f, RPM MOTOR A : %.4f   RPM MOTOR B : %.4f   VOLT:%.2f\n",motorA.target_rpm,motorA.rpm, motorB.rpm, battery_volt);
                     print = 0;
                }
                print++;
