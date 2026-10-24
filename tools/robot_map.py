@@ -135,10 +135,26 @@ class Demo(threading.Thread):
             time.sleep(0.1)
 
 
-def pose_triangle(x, y, th_deg, size=0.07):
-    """Corner points of a little arrow at (x, y) pointing along theta."""
+# Robot outline in metres. Robot frame: +x is forward.
+# The origin is the midpoint of the drive axle. The odometry tracks this point.
+# Measured sizes: 209 mm over the outer faces of the wheels, 157 mm between the wheels.
+# Each wheel is 26 mm wide. The track width (centre to centre) is 183 mm.
+# The robot is 213 mm long. The drive wheels are at the front. The dead wheel is at the rear.
+TRACK, WHEEL_W, WHEEL_D, LENGTH, GAP = 0.183, 0.026, 0.0685, 0.213, 0.157
+HALF_W = GAP / 2 + WHEEL_W
+BODY = [(0.0, HALF_W), (-LENGTH, HALF_W), (-LENGTH, -HALF_W), (0.0, -HALF_W)]
+WHEELS = [
+    [(WHEEL_D / 2, yc + WHEEL_W / 2), (-WHEEL_D / 2, yc + WHEEL_W / 2),
+     (-WHEEL_D / 2, yc - WHEEL_W / 2), (WHEEL_D / 2, yc - WHEEL_W / 2)]
+    for yc in (TRACK / 2, -TRACK / 2)
+]
+CASTER = [(-LENGTH + 0.025, 0.0)]
+NOSE = [(0.075, 0.0), (0.02, 0.03), (0.02, -0.03)]  # points forward
+
+
+def place(pts, x, y, th_deg):
+    """Move robot-frame points to the map: rotate by theta, then shift to (x, y)."""
     th = math.radians(th_deg)
-    pts = [(size, 0.0), (-0.6 * size, 0.5 * size), (-0.6 * size, -0.5 * size)]
     c, s = math.cos(th), math.sin(th)
     return [(x + px * c - py * s, y + px * s + py * c) for px, py in pts]
 
@@ -161,8 +177,12 @@ def build_ui(state, link):
     ax.grid(True, alpha=0.4)
     ax.plot([0], [0], "ko", ms=5)  # origin
     (trail_line,) = ax.plot([], [], "-", color="tab:blue", lw=1.5)
-    arrow = Polygon(pose_triangle(0, 0, 0), closed=True, color="tab:red", zorder=5)
-    ax.add_patch(arrow)
+    body = Polygon(place(BODY, 0, 0, 0), closed=True, fill=False, ec="0.3", lw=1.5, zorder=4)
+    wheels = [Polygon(place(w, 0, 0, 0), closed=True, color="0.2", zorder=5) for w in WHEELS]
+    arrow = Polygon(place(NOSE, 0, 0, 0), closed=True, color="tab:red", zorder=6)
+    for patch in [body, arrow] + wheels:
+        ax.add_patch(patch)
+    (caster,) = ax.plot([], [], "o", color="0.5", ms=5, zorder=5)
     info = ax.text(0.01, 0.99, "", transform=ax.transAxes, va="top", family="monospace", fontsize=9)
     ax.set_title("keys: w a s d, SPACE = stop -> robot   c = new origin   q = quit")
 
@@ -176,7 +196,12 @@ def build_ui(state, link):
             age = time.time() - state.last_rx
         if trail:
             trail_line.set_data([p[0] for p in trail], [p[1] for p in trail])
-        arrow.set_xy(pose_triangle(x, y, th))
+        body.set_xy(place(BODY, x, y, th))
+        arrow.set_xy(place(NOSE, x, y, th))
+        for patch, shape in zip(wheels, WHEELS):
+            patch.set_xy(place(shape, x, y, th))
+        cx_, cy_ = place(CASTER, x, y, th)[0]
+        caster.set_data([cx_], [cy_])
         pts = trail + [(x, y)]
         half = max(1.0, max(max(abs(p[0]), abs(p[1])) for p in pts) + 0.3)  # square, grows with the trail
         cx = (max(p[0] for p in pts) + min(p[0] for p in pts)) / 2
@@ -193,7 +218,7 @@ def build_ui(state, link):
         if rpm:
             text += "target %5.1f rpm\nA %7.2f  B %7.2f\nbattery %.2f V\n" % rpm
         info.set_text(text + status)
-        return trail_line, arrow, info
+        return trail_line, body, arrow, caster, info
 
     def on_key(event):
         if event.key in list(SEND_KEYS):
@@ -239,8 +264,11 @@ def selftest():
     for k in ("w", " ", "x"):  # 'x' is not a robot key
         fig.canvas.callbacks.process("key_press_event", KeyEvent("key_press_event", fig.canvas, k))
     assert sent == ["w", " "], sent
-    tri = pose_triangle(0, 0, 90)
-    assert abs(tri[0][0]) < 1e-9 and tri[0][1] > 0  # theta 90 deg points to +y
+    nose = place(NOSE, 0, 0, 90)[0]
+    assert abs(nose[0]) < 1e-9 and nose[1] > 0  # theta 90 deg: nose points to +y
+    rear = place([(-LENGTH, 0.0)], 1.0, 2.0, 90)[0]
+    assert abs(rear[0] - 1.0) < 1e-9 and abs(rear[1] - (2.0 - LENGTH)) < 1e-9  # tail trails behind
+    assert abs((HALF_W * 2) - 0.209) < 1e-9 and abs((TRACK / 2 + WHEEL_W / 2) - HALF_W) < 1e-9
     print("selftest OK")
 
 

@@ -53,3 +53,47 @@ Code lives in `firmware/Motor_Drive_With_IDF/main/main.c` (main checkout, not co
   - With the wheel in the air the feed-forward is already almost exact, so the steady error is < 1 rpm. Under load P-only will leave an error → add the I term (t08).
 - Two false alarms: the "restart at PWM ≥ 45" was a key press (`0` set PWM to 0), not a reset. The random GPIO 48 RGB LED is a floating pin (not fixed yet: set it as output, low).
 - **Open items:** verify motor B (1980 per turn, sign of +PWM vs +rpm — if opposite, the loop runs away), measure the PWM→rpm table on the floor, PI controller (t08), battery check (read every cycle, hysteresis, command 0 when low instead of sleeping), wrap handling for the PCNT counter (±32767, ~5 s at full speed), tidy `main.c` (per-motor struct, named constants, `motor.c/h`).
+
+## 2026-10-16 to 2026-10-25 — Speed loop in motor.c, odometry, Wi-Fi, live map
+Code is in `firmware/Motor_Drive_With_IDF/main/`. Style rule from 2026-10-25: write English in ASD-STE100.
+
+**Speed loop (motor.c, motor.h)**
+- `motor_t` holds the pins, the PCNT unit, and the state of one motor. `motor_drive()` replaces the two copies of `motorMove`.
+- `motor_update()` does the full cycle: read the count, handle the PCNT wrap, calculate rpm, add feed-forward, P, and I terms, clamp, lift the dead zone, and drive the motor.
+- Feed-forward: `(|target| + 9.9) / 2.01`, with the sign of the target. Negative targets work.
+- Dead zone: a PWM value between 0 and 15 (or between -15 and 0) is set to 15 (or -15).
+- The integral clamp is ±10. A clamp of ±30 gave an 80 % overshoot at start-up.
+- `motor_kp` and `motor_ki` are shared globals (one set of gains for both motors).
+- Motor A is the LEFT wheel. Motor B is the RIGHT wheel. The names follow the PCB silkscreen. Both encoders give 1980 ticks per turn.
+- A target of 20 rpm or less is limited by the dead zone. The wheel cannot hold a speed below about 21 rpm.
+
+**Odometry (odom.c, odom.h)**
+- One tick is `pi * D / 1980` m. The wheel diameter D is 68.5 mm (measured). The old code used 65 mm.
+- `d = (dL + dR) / 2` and `dtheta = (dR - dL) / L`. The code uses the new theta to update x and y.
+- Test: a 300 mm push read 311 mm (3.7 % too high). After more tests the distance is accurate. Heading drift was small (y = 2 mm, theta = -0.4 deg).
+
+**Wi-Fi (net.c, net.h)**
+- Wi-Fi station mode plus one TCP server on port 3333. The robot serves ONE client only.
+- `net_printf()` and `net_getc()` do not block. The control loop never waits for the network.
+- The Wi-Fi name and password are in `wifi_secret.h`. This file is in `.gitignore`. Do not commit it.
+- Warning: ADC2 (battery sense, GPIO 14) and Wi-Fi share hardware. `adc_oneshot_read` can return `ESP_ERR_TIMEOUT`. The code must not stop on this error.
+
+**Live map (tools/robot_map.py)**
+- It reads the Odom lines from the TCP stream. It draws the trail and the robot outline on an x-y map.
+- Keys w, a, s, d, and space go to the robot. Use this tool instead of `nc`.
+- Run `python3 tools/robot_map.py --demo` to test it without the robot.
+
+**Robot size (measured 2026-10-25)**
+- Width over the outer faces of the wheels: 209 mm. Gap between the wheels: 157 mm.
+- Each wheel is 26 mm wide. The track width (centre to centre) is therefore 157 + 26 = **183 mm**.
+- Length: 213 mm. The drive wheels are at the front. The dead (caster) wheel is at the rear.
+- The odometry point is the midpoint of the drive axle.
+- `TRACK_WIDTH` in `odom.h` was 0.157 (the gap, not the track width). Change it to 0.183. Then calibrate: turn the robot one full turn on the floor. The theta reading must be 360 deg.
+- A turn on the spot sweeps the rear of the robot through a circle of about 0.5 m diameter.
+
+**Open items**
+1. Dead-man timeout: the robot must stop when no key arrives (use 0.7 s).
+2. `drive(v, omega)`, the `D` and `T` commands (go a distance, turn an angle), and the `p0.01` command (set Kp).
+3. Handle the ADC2 error when Wi-Fi is on.
+4. Calibrate `TRACK_WIDTH` on the floor (3 turns, take the average).
+5. Measure the PWM-to-rpm table on the floor.
