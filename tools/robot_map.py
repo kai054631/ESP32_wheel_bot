@@ -27,7 +27,7 @@ ODOM_RE = re.compile(r"Odom:\s*X:\s*(-?[\d.]+),\s*Y:\s*(-?[\d.]+),\s*theta:\s*(-
 RPM_RE = re.compile(
     r"Target RPM:\s*(-?[\d.]+),\s*RPM MOTOR A\s*:\s*(-?[\d.]+)\s+RPM MOTOR B\s*:\s*(-?[\d.]+)\s+VOLT:\s*(-?[\d.]+)"
 )
-SEND_KEYS = "wasdr +-"  # forwarded as they are (space = stop, r = zero the odometry, + and - = speed)
+SEND_KEYS = "wasdr =-"  # forwarded as they are (space = stop, r = zero the odometry, = and - = speed)
 
 
 def parse_line(line):
