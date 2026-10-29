@@ -135,3 +135,12 @@ Goal: find the effective track width L. The odometry uses `dtheta = (dR - dL) / 
 
 **Status:** waiting for the 6 readings with `TRACK_WIDTH = 0.19`.
 **New open item:** add a key to the firmware that sets `odom` to zero (for example the `r` key). Then the EN button is not needed between tests.
+
+## 2026-10-29 — Track width depends on the dead wheel
+
+- The user tested with the dead (caster) wheel removed. The best `TRACK_WIDTH` is **0.181 m**.
+- The size from the ruler is 0.183 m. So the two values now agree.
+- With the dead wheel fitted, the best value was about 0.19 m (two sets of tests: 0.1907 and 0.191).
+- Cause: the dead wheel drags and slips when the robot turns. This makes the effective track width larger.
+- Rule: calibrate `TRACK_WIDTH` again each time the support at the rear changes.
+- The user uses 0.181 for tests without the dead wheel.

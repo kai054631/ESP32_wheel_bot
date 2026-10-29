@@ -62,7 +62,7 @@ Couplings. A change in one place breaks the other:
 - Encoder: 11 PPR x 4 (decode) x 45 (gear) = 1980 ticks per wheel turn. Wheel diameter: 68.5 mm (measured).
 - Size: 209 mm over the outer faces of the wheels, 157 mm between the wheels, 26 mm per wheel, 213 mm long.
   The drive wheels are at the front. The dead (caster) wheel is at the rear. The odometry point is the midpoint of the drive axle.
-- Track width (centre to centre of the wheels): 183 mm from the sizes. The effective value is larger. The calibration is in progress (about 0.19 m). Read `progress.md` for the latest value.
+- Track width (centre to centre of the wheels): 183 mm from the sizes. The best value depends on the dead wheel. Without it: 0.181 m. With it: about 0.19 m, because it drags and slips. Calibrate again when the rear support changes. Read `progress.md` for the latest value.
 - PWM below about 15 % does not turn the motor (dead zone). 15 % gives about 21 rpm. The feed-forward `(|rpm| + 9.9) / 2.01` comes from an unloaded fit. Measure it again on the floor.
 - The PCNT limit is +-32767. `motor_update` handles the wrap. Do not remove this code.
 - Battery sense is on GPIO 14 (ADC2). ADC2 and Wi-Fi share hardware. When Wi-Fi is on, `adc_oneshot_read` can return `ESP_ERR_TIMEOUT`.
