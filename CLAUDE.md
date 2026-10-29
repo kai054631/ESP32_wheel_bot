@@ -53,7 +53,7 @@ python3 tools/robot_map.py [host]             # live x-y map. Also: --demo (fake
 
 Couplings. A change in one place breaks the other:
 - The text that `main.c` prints (`Odom: X: ...` and `Target RPM: ...`) is parsed by regular expressions in `tools/robot_map.py`.
-- The key letters in `main.c` (`w a s d` and space = stop) match `SEND_KEYS` in `tools/robot_map.py`.
+- The key letters in `main.c` (`w a s d`, `r` = zero the odometry, space = stop) match `SEND_KEYS` in `tools/robot_map.py`.
 - `TRACK_WIDTH` in `odom.h` is used by the odometry. `robot_map.py` has its own size constants, only for drawing.
 
 ## Hardware facts that the code does not show

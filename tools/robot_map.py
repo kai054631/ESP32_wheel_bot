@@ -27,7 +27,7 @@ ODOM_RE = re.compile(r"Odom:\s*X:\s*(-?[\d.]+),\s*Y:\s*(-?[\d.]+),\s*theta:\s*(-
 RPM_RE = re.compile(
     r"Target RPM:\s*(-?[\d.]+),\s*RPM MOTOR A\s*:\s*(-?[\d.]+)\s+RPM MOTOR B\s*:\s*(-?[\d.]+)\s+VOLT:\s*(-?[\d.]+)"
 )
-SEND_KEYS = "wasd "  # forwarded to the robot as they are (space = stop)
+SEND_KEYS = "wasdr "  # forwarded to the robot as they are (space = stop, r = zero the odometry)
 
 
 def parse_line(line):
@@ -66,9 +66,9 @@ class State:
             else:
                 self.rpm = item[1:]
 
-    def reset_origin(self):
+    def reset_origin(self, origin=None):
         with self.lock:
-            self.origin = self.pose[:2]
+            self.origin = origin or self.pose[:2]
             self.trail.clear()
             self.trail.append((0.0, 0.0))
 
@@ -184,7 +184,7 @@ def build_ui(state, link):
         ax.add_patch(patch)
     (caster,) = ax.plot([], [], "o", color="0.5", ms=5, zorder=5)
     info = ax.text(0.01, 0.99, "", transform=ax.transAxes, va="top", family="monospace", fontsize=9)
-    ax.set_title("keys: w a s d, SPACE = stop -> robot   c = new origin   q = quit")
+    ax.set_title("keys: w a s d, SPACE = stop, r = zero odometry -> robot   c = new origin   q = quit")
 
     def update(_frame=None):
         with state.lock:
@@ -223,6 +223,8 @@ def build_ui(state, link):
     def on_key(event):
         if event.key in list(SEND_KEYS):
             link.send(event.key)
+            if event.key == "r":  # the robot sets x, y to 0, so the map starts again at 0
+                state.reset_origin((0.0, 0.0))
         elif event.key == "c":
             state.reset_origin()
         elif event.key == "q":
