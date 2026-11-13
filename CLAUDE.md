@@ -10,6 +10,7 @@ The course plan is in `syllabus.md`. The log and the open items are in `progress
 
 ## How to work here
 
+- Read `coach.md` at the start of each session. It has the tutoring rules, the stages, and the model to use for each stage.
 - The user writes the firmware. Claude explains, asks questions, checks the code, and finds bugs. Do not edit the user's `main.c`, `motor.c/h`, or `odom.c/h`.
   The user asked Claude to write `net.c/h`, `tools/robot_map.py`, and the docs. Those are allowed.
 - The live code is in the main checkout (`~/robot_learner`, branch `main`). It is often not committed. A Claude session in a worktree cannot edit there.
@@ -24,7 +25,7 @@ The course plan is in `syllabus.md`. The log and the open items are in `progress
 All firmware commands run in `firmware/Motor_Drive_With_IDF`. The other folders in `firmware/` are separate learning examples.
 
 ```bash
-. ~/.espressif/tools/activate_idf_v5.3.2.sh   # ESP-IDF v5.3.2. The VS Code extension uses v6.0.2, but the verified builds use v5.3.2.
+. ~/.espressif/tools/activate_idf_v6.0.2.sh   # ESP-IDF v6.0.2 (v5.3.2 was removed 2026-11-02). Builds verified with GCC 15.2.
 idf.py build
 idf.py -p <port> flash monitor                # find <port> with: lsusb; ls /dev/ttyACM* /dev/ttyUSB*
 python3 tools/robot_map.py [host]             # live x-y map. Also: --demo (fake robot), --selftest (no window)

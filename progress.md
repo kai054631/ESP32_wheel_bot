@@ -144,3 +144,18 @@ Goal: find the effective track width L. The odometry uses `dtheta = (dR - dL) / 
 - Cause: the dead wheel drags and slips when the robot turns. This makes the effective track width larger.
 - Rule: calibrate `TRACK_WIDTH` again each time the support at the rear changes.
 - The user uses 0.181 for tests without the dead wheel.
+
+## 2026-11-13 — Review of the course and a tutoring plan
+- Claude read the full folder and the old sessions. The result is in `coach.md`: 8 weak points, one rule for each, 6 stages with pass tests.
+- Main weak point: the user skips the step "think, calculate, and verify before you ask".
+- The firmware in the main checkout is not committed after 2026-10-25. No work was done from 2026-10-30 to 2026-11-13.
+- State of `main.c`: the normal control loop is commented out. A step test (PWM 30 and 50) is in its place. The printed rpm does not change. The user must find the cause (see the questions in `coach.md`).
+- Constants do not agree: `WHEEL_DIAMETER` is 0.0646 in `motor.h` but the measured value is 68.5 mm. `TRACK_WIDTH` is 0.183 in `odom.h` but the best value without the dead wheel is 0.181. `pins.txt` gives GPIO 4 to motor A, but `main.c` gives it to motor B.
+- The speed step in `main.c` is 20 rpm (limit 190). The plan from 2026-10-29 was 5 rpm.
+
+**Open items (maximum 5)**
+1. Stage 0: put the main loop back, make the constants and `pins.txt` agree, commit.
+2. Stage 1: repair the step test, get K and tau, calculate Kp and Ki.
+3. `drive(v, omega)` with the dead-man timeout.
+4. `D` and `T` commands.
+5. Floor work: PWM table, six track width readings, ADC2 error handling.
